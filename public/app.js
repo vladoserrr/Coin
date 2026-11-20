@@ -39,6 +39,28 @@ if (!playerId) {
  localStorage.setItem("coinPlayerId", playerId);
 }
 let toastTimer;
+let telegramInitData = window.Telegram?.WebApp?.initData || "";
+let telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+let isCoinAdmin = false;
+let roundCounter = 0;
+function apiHeaders(){return {"Content-Type":"application/json",...(telegramInitData?{"X-Telegram-Init-Data":telegramInitData}:{})};}
+async function initTelegram(){
+ const tg=window.Telegram?.WebApp;
+ if(tg){tg.ready();tg.expand();telegramUser=tg.initDataUnsafe?.user||null;telegramInitData=tg.initData||"";}
+ if(!telegramInitData)return;
+ try{
+  const r=await fetch("/api/auth",{method:"POST",headers:apiHeaders(),body:JSON.stringify({initData:telegramInitData})});
+  if(!r.ok)throw new Error("Telegram auth failed");
+  const d=await r.json();
+  if(d.telegramEnabled&&d.player){
+   telegramUser=d.user||telegramUser;isCoinAdmin=!!d.admin;
+   state.nickname=d.player.nickname||state.nickname;state.balance=Number(d.player.balance??state.balance);
+   state.telegramUsername=d.player.username||"";state.telegramPhoto=d.player.photoUrl||"";
+   save();updateStats();if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
+  }
+ }catch(e){console.warn("Coin Telegram auth:",e.message);}
+}
+
 
 function save(){ localStorage.setItem("coinState",JSON.stringify(state)); }
 function notify(message){ const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2400); }
@@ -53,7 +75,7 @@ function updateStats(){
 }
 function buildBoard(){
  if(remotePlayers.length){
-  return remotePlayers.map(p=>({name:p.nickname,score:p.score,games:p.games,initial:(p.nickname||"И").slice(0,1).toUpperCase(),me:p.id===playerId}));
+  return remotePlayers.map(p=>({name:p.nickname,username:p.username||"",photoUrl:p.photoUrl||"",score:p.score,games:p.games,initial:(p.nickname||"И").slice(0,1).toUpperCase(),me:p.id===playerId}));
  }
  const players=DEMO_PLAYERS.map(p=>({...p,me:false}));
  players.push({name:state.nickname||"Игрок",score:state.score,games:state.played,initial:(state.nickname||"V").slice(0,1).toUpperCase(),me:true});
@@ -69,13 +91,13 @@ async function refreshBoard(period=activePeriod){
 }
 async function syncPlayer(){
  try{
-  await fetch("/api/player",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({playerId,nickname:state.nickname||"Игрок"})});
+  await fetch("/api/player",{method:"POST",headers:apiHeaders(),body:JSON.stringify({playerId,nickname:state.nickname||"Игрок",balance:state.balance})});
   await refreshBoard();
  }catch(error){console.warn("Coin player sync:",error.message);}
 }
 async function syncScore(points,won){
  try{
-  await fetch("/api/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({playerId,nickname:state.nickname||"Игрок",points,won})});
+  await fetch("/api/score",{method:"POST",headers:apiHeaders(),body:JSON.stringify({playerId,nickname:state.nickname||"Игрок",points,won,balance:state.balance})});
   await refreshBoard();
  }catch(error){console.warn("Coin score sync:",error.message);}
 }
