@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 8080;
 const MIME = {".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8",".svg":"image/svg+xml"};
 const MAX_ENERGY = 100;
 const ENERGY_REGEN_MS = 30000;
-const DONUT_REWARD = 250;
 const START_BALANCE = 0;
 const START_ENERGY = 100;
 const now = () => Date.now();
@@ -32,8 +31,10 @@ function telegramUser(initData){
   return {id:"tg_"+u.id,telegramId:String(u.id),name:clean([u.first_name,u.last_name].filter(Boolean).join(" "),32)||"Игрок",username:clean(u.username,32),photoUrl:/^https:\/\//.test(u.photo_url||"")?u.photo_url:""};
  }catch{return null;}
 }
-function regen(p){const t=now(),last=Number(p.energyAt||t),ticks=Math.floor((t-last)/ENERGY_REGEN_MS);if(ticks>0){p.energy=Math.min(MAX_ENERGY,Number(p.energy||0)+ticks);p.energyAt=last+ticks*ENERGY_REGEN_MS;}return p;}
-function publicPlayer(p){return {id:p.id,name:p.name,username:p.username,photoUrl:p.photoUrl||"",balance:p.balance,level:p.level,xp:p.xp,energy:p.energy,maxEnergy:MAX_ENERGY,energyAt:p.energyAt,clickPower:p.clickPower,upgrades:p.upgrades,referralCode:p.referralCode,referrals:p.referrals||0,donuts:p.donuts||0};}
+function maxEnergy(p){return MAX_ENERGY+Math.max(0,Number(p.upgrades?.capacity)||0)*20;}
+function regenMs(p){return Math.max(10000,ENERGY_REGEN_MS-Math.max(0,Number(p.upgrades?.regen)||0)*3000);}
+function regen(p){const t=now(),last=Number(p.energyAt||t),interval=regenMs(p),ticks=Math.floor((t-last)/interval);if(ticks>0){p.energy=Math.min(maxEnergy(p),Number(p.energy||0)+ticks);p.energyAt=last+ticks*interval;}p.energy=Math.min(maxEnergy(p),Number(p.energy||0));return p;}
+function publicPlayer(p){return {id:p.id,name:p.name,username:p.username,photoUrl:p.photoUrl||"",balance:p.balance,level:p.level,xp:p.xp,energy:p.energy,maxEnergy:maxEnergy(p),regenMs:regenMs(p),energyAt:p.energyAt,clickPower:p.clickPower,upgrades:p.upgrades,referralCode:p.referralCode,referrals:p.referrals||0,donuts:p.donuts||0};}
 function makePlayer(id,meta={}){return {id,name:meta.name||"Игрок",username:meta.username||"",photoUrl:meta.photoUrl||"",balance:START_BALANCE,level:1,xp:0,energy:START_ENERGY,energyAt:now(),clickPower:1,upgrades:{power:0,capacity:0,regen:0},referralCode:crypto.randomBytes(4).toString("hex").toUpperCase(),referrals:0,donuts:0,createdAt:now()};}
 function playerFor(db,user,guestId){const id=user?.id||("guest_"+String(guestId||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,48));if(!id||id==="guest_")return null;let p=db.players[id];if(!p){p=makePlayer(id,user||{});db.players[id]=p;}if(user){p.name=user.name||p.name;p.username=user.username||p.username;p.photoUrl=user.photoUrl||p.photoUrl;}regen(p);return p;}
 function upgradeCost(kind,level){const base={power:120,capacity:180,regen:240}[kind];return Math.floor(base*Math.pow(1.72,level));}
@@ -57,8 +58,8 @@ const server=http.createServer(async(req,res)=>{
    const cost=upgradeCost(kind,level);if(p.balance<cost)return send(res,409,{error:"Не хватает пончиков",player:publicPlayer(p),cost});
    p.balance-=cost;p.upgrades[kind]++;
    if(kind==="power")p.clickPower+=1;
-   if(kind==="capacity"){p.energy+=20;p.energyAt=now();}
-   if(kind==="regen")p.energyAt=now()-Math.max(0,ENERGY_REGEN_MS-5000);
+   if(kind==="capacity"){p.energy=Math.min(maxEnergy(p),p.energy+20);p.energyAt=now();}
+   if(kind==="regen"){p.energyAt=now();}
    dbWrite(db);return send(res,200,{cost,player:publicPlayer(p)});
   }
   if(pathname==="/api/top"&&req.method==="GET"){
@@ -77,7 +78,7 @@ const server=http.createServer(async(req,res)=>{
   if(pathname==="/api/profile"&&req.method==="POST"){
    const b=await body(req),user=telegramUser(req.headers["x-telegram-init-data"]||b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});
    // Process pending referral once the new player reaches level 3.
-   if(p.level>=3&&db.referrals[p.id]&&!db.referrals[p.id].paid){const inviter=db.players[db.referrals[p.id].inviter];if(inviter){inviter.donuts=(inviter.donuts||0)+1;inviter.referrals=(inviter.referrals||0)+1;db.referrals[p.id].paid=true;}}
+   if(p.level>=3&&db.referrals[p.id]&&!db.referrals[p.id].paid){const inviter=db.players[db.referrals[p.id].inviter];if(inviter){inviter.donuts=(inviter.donuts||0)+1;inviter.balance=(inviter.balance||0)+1;inviter.referrals=(inviter.referrals||0)+1;db.referrals[p.id].paid=true;}}
    dbWrite(db);return send(res,200,{player:publicPlayer(p)});
   }
   if(pathname.startsWith("/api/"))return send(res,404,{error:"Not found"});
