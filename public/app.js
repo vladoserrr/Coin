@@ -1,17 +1,17 @@
 const GAMES = [
- {id:"dice",name:"Кости",icon:"dice",desc:"Брось кубик и поймай высокий результат.",type:"luck",category:"LUCK",hint:"Выпало 4–6 — выигрыш ×2"},
- {id:"coin",name:"Монетка",icon:"coin",desc:"Орёл или решка — решает один бросок.",type:"luck",category:"LUCK",hint:"Угадай сторону — ×1.9"},
- {id:"roulette",name:"Рулетка",icon:"roulette",desc:"Крути колесо и лови редкий сектор.",type:"luck",category:"LUCK",hint:"Красное ×2 · Золото ×8"},
- {id:"mines",name:"Мины",icon:"mines",desc:"Открой безопасную ячейку и забери множитель.",type:"skill",category:"SKILL",hint:"Безопасный ход — ×1.7"},
- {id:"slots",name:"Слоты",icon:"slots",desc:"Собери одинаковые символы на барабанах.",type:"luck",category:"LUCK",hint:"Комбинации до ×8"},
- {id:"plinko",name:"Плинко",icon:"plinko",desc:"Отпусти шар и смотри, куда он упадёт.",type:"luck",category:"LUCK",hint:"Множители от ×0.2 до ×5"},
- {id:"wheel",name:"Колесо",icon:"wheel",desc:"Испытай удачу на секторном колесе.",type:"luck",category:"LUCK",hint:"Случайный множитель до ×10"},
- {id:"hilo",name:"Выше-ниже",icon:"hilo",desc:"Угадай, будет следующая карта выше или ниже.",type:"skill",category:"SKILL",hint:"Верный прогноз — ×1.8"},
- {id:"blackjack",name:"Блэкджек",icon:"blackjack",desc:"Набери ближе к 21, чем дилер.",type:"skill",category:"SKILL",hint:"Победа — ×1.9"},
- {id:"baccarat",name:"Баккара",icon:"baccarat",desc:"Предскажи, чья сумма будет ближе к девяти.",type:"luck",category:"LUCK",hint:"Победа ×1.95 · ничья ×8"},
- {id:"keno",name:"Кено",icon:"keno",desc:"Выбери удачное число из случайного тиража.",type:"luck",category:"LUCK",hint:"Попадание — ×5"},
+ {id:"dice",name:"Кости",icon:"dice",desc:"Брось кубик и поймай высокий результат.",type:"luck",category:"LUCK",hint:"Выпало 5–6 — выигрыш ×1.9"},
+ {id:"coin",name:"Монетка",icon:"coin",desc:"Орёл или решка — решает один бросок.",type:"luck",category:"LUCK",hint:"Шанс выигрыша 46% · ×1.85"},
+ {id:"roulette",name:"Рулетка",icon:"roulette",desc:"Крути колесо и лови редкий сектор.",type:"luck",category:"LUCK",hint:"Красное ×1.85 · Золото ×7"},
+ {id:"mines",name:"Мины",icon:"mines",desc:"Открой безопасную ячейку и забери множитель.",type:"skill",category:"SKILL",hint:"Безопасная ячейка 49% · ×1.8"},
+ {id:"slots",name:"Слоты",icon:"slots",desc:"Собери одинаковые символы на барабанах.",type:"luck",category:"LUCK",hint:"Комбинации до ×7"},
+ {id:"plinko",name:"Плинко",icon:"plinko",desc:"Отпусти шар и смотри, куда он упадёт.",type:"luck",category:"LUCK",hint:"Множители от ×0.2 до ×3"},
+ {id:"wheel",name:"Колесо",icon:"wheel",desc:"Испытай удачу на секторном колесе.",type:"luck",category:"LUCK",hint:"Случайный множитель до ×5"},
+ {id:"hilo",name:"Выше-ниже",icon:"hilo",desc:"Угадай, будет следующая карта выше или ниже.",type:"skill",category:"SKILL",hint:"Верный прогноз — ×1.75"},
+ {id:"blackjack",name:"Блэкджек",icon:"blackjack",desc:"Набери ближе к 21, чем дилер.",type:"skill",category:"SKILL",hint:"Победа — ×1.8"},
+ {id:"baccarat",name:"Баккара",icon:"baccarat",desc:"Предскажи, чья сумма будет ближе к девяти.",type:"luck",category:"LUCK",hint:"Победа ×1.85 · ничья ×2"},
+ {id:"keno",name:"Кено",icon:"keno",desc:"Выбери удачное число из случайного тиража.",type:"luck",category:"LUCK",hint:"Попадание 16% · ×5"},
  {id:"crash",name:"Краш",icon:"crash",desc:"Забери выигрыш до того, как график рухнет.",type:"skill",category:"SKILL",hint:"Множитель до ×4"},
- {id:"limbo",name:"Лимбо",icon:"limbo",desc:"Поймай случайный множитель выше цели.",type:"skill",category:"SKILL",hint:"Цель ×2 · выплата ×2"},
+ {id:"limbo",name:"Лимбо",icon:"limbo",desc:"Поймай случайный множитель выше цели.",type:"skill",category:"SKILL",hint:"Цель ×3 · выплата ×2.1"},
  {id:"towers",name:"Башни",icon:"towers",desc:"Поднимайся выше, не попав на ловушку.",type:"skill",category:"SKILL",hint:"Каждый шаг повышает множитель"}
 ];
 
@@ -168,11 +168,11 @@ function outcome(id){
   case "wheel":{const vals=[0,.3,.5,.5,.8,1,1,1.2,1.5,2,3,5];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"СЕКТОР КОЛЕСА",mult:m,detail:m>=5?"Редкий сектор! Отличный результат.":"Колесо остановилось на ×"+m};}
   case "hilo":{const a=randomInt(2,14),b=randomInt(2,14),higher=Math.random()<.5;const win=higher?b>a:b<a;return {label:a+" → "+b,caption:higher?"ПРОГНОЗ: ВЫШЕ":"ПРОГНОЗ: НИЖЕ",mult:win?1.75:0,detail:win?"Верный прогноз!":"На этот раз прогноз не сбылся."};}
   case "blackjack":{const p=randomInt(15,22),d=randomInt(15,22);const win=p<=21&&(d>21||p>d);const push=p===d;return {label:p+" : "+d,caption:"ТЫ  /  ДИЛЕР",mult:push?1:win?1.8:0,detail:push?"Ничья — ставка возвращена.":win?"Ты обошёл дилера!": "Дилер победил."};}
-  case "baccarat":{const p=randomInt(0,9),b=randomInt(0,9);const win=p>b;const tie=p===b;return {label:p+" : "+b,caption:"ИГРОК  /  БАНК",mult:tie?7:win?1.85:0,detail:tie?"Ничья — ×8!":win?"Победил игрок.":"Победил банк."};}
+  case "baccarat":{const p=randomInt(0,9),b=randomInt(0,9);const win=p>b;const tie=p===b;return {label:p+" : "+b,caption:"ИГРОК  /  БАНК",mult:tie?2:win?1.85:0,detail:tie?"Ничья — ×8!":win?"Победил игрок.":"Победил банк."};}
   case "keno":{const hit=Math.random()<.16;return {label:hit?"ПОПАДАНИЕ":"МИМО",caption:hit?"ЧИСЛО УГАДАНО":"МИМО",mult:hit?5:0,detail:hit?"Есть попадание — ×5!":"Тираж не совпал с твоим числом."};}
   case "crash":{const crash=+(1+Math.random()*3).toFixed(2);const cashout=+(1+Math.random()*2.5).toFixed(2);const win=cashout<crash&&Math.random()<.82;return {label:"×"+(win?cashout:crash),caption:win?"УСПЕЛ ЗАБРАТЬ":"КРАШ",mult:win?cashout:0,detail:win?"Ты забрал до падения графика!":"График рухнул раньше вывода."};}
-  case "limbo":{const m=+(Math.random()*4.8+.2).toFixed(2);return {label:"×"+m,caption:"СЛУЧАЙНЫЙ МНОЖИТЕЛЬ",mult:m>=2.5?2.25:0,detail:m>=2.5?"Цель ×2,5 пройдена!":"Множитель ниже цели ×2,5."};}
-  case "towers":{let steps=0;for(let i=0;i<4;i++){if(Math.random()<.58)steps++;else break;}const mult=steps===0?0:+Math.pow(1.45,steps).toFixed(2);return {label:steps+" / 4",caption:"ПРОЙДЕНО ЭТАЖЕЙ",mult,detail:steps===4?"Ты покорил башню!":steps?"Ты поднялся на "+steps+" этаж(а).":"Ловушка на первом этаже."};}
+  case "limbo":{const m=+(Math.random()*4.8+.2).toFixed(2);return {label:"×"+m,caption:"СЛУЧАЙНЫЙ МНОЖИТЕЛЬ",mult:m>=3?2.1:0,detail:m>=3?"Цель ×3 пройдена!":"Множитель ниже цели ×3."};}
+  case "towers":{let steps=0;for(let i=0;i<4;i++){if(Math.random()<.38)steps++;else break;}const mult=steps===0?0:+Math.pow(1.35,steps).toFixed(2);return {label:steps+" / 4",caption:"ПРОЙДЕНО ЭТАЖЕЙ",mult,detail:steps===4?"Ты покорил башню!":steps?"Ты поднялся на "+steps+" этаж(а).":"Ловушка на первом этаже."};}
   default:return {label:"?",caption:"РЕЗУЛЬТАТ",mult:0,detail:"Попробуй ещё раз."};
  }
 }
