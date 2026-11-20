@@ -120,10 +120,12 @@ function openGame(id){
 function showCasino(){
  $("gameStage").classList.add("hidden");$("gamesSection").classList.remove("hidden");$("leaderboardPreview").classList.remove("hidden");$("leaderboardPage").classList.add("hidden");$("transferPage").classList.add("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="casino"));
+ document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="casino"));
 }
 function showLeaderboard(){
  $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("transferPage").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="leaderboard"));
+ document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="leaderboard"));
  renderBoard("fullBoard",20);refreshBoard(activePeriod);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function showTransfer(){
