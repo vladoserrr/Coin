@@ -159,38 +159,57 @@ function showTransfer(){
 function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function outcome(id){
  switch(id){
-  case "dice":{const n=randomInt(1,6);return {label:String(n),caption:"БРОСОК КУБИКА",mult:n>=4?2:0,detail:n>=4?"Высокий бросок — победа!":"Не хватило до четырёх."};}
-  case "coin":{const side=Math.random()<.5?"ОРЁЛ":"РЕШКА";return {label:side,caption:side,mult:Math.random()<.5?1.9:0,detail:"Монетка выбрала: "+side};}
-  case "roulette":{const n=randomInt(0,36);const mult=n===0?8:(n%2===0?0:2);return {label:String(n),caption:n===0?"ЗОЛОТОЙ СЕКТОР":n%2===0?"ЧЁРНОЕ":"КРАСНОЕ",mult,detail:n===0?"Редкий золотой сектор!":mult?"Красный сектор — выигрыш.":"Чёрный сектор в этот раз."};}
-  case "mines":{const safe=Math.random()<.57;return {label:safe?"SAFE":"МИНА",caption:safe?"БЕЗОПАСНО":"МИНА",mult:safe?1.7:0,detail:safe?"Ты нашёл безопасную ячейку.":"Мина! Ставка сгорела."};}
-  case "slots":{const symbols=["7","◆","●","✦","◇"];const a=symbols[randomInt(0,4)],b=symbols[randomInt(0,4)],c=symbols[randomInt(0,4)];const mult=a===b&&b===c?(a==="7"?8:a==="✦"?5:3):(a===b||b===c||a===c?1.5:0);return {label:a+" "+b+" "+c,caption:mult?"КОМБИНАЦИЯ":"НЕТ КОМБИНАЦИИ",mult,detail:mult>=3?"Три одинаковых символа!":mult?"Есть совпадение — небольшой выигрыш.":"Попробуй ещё раз."};}
-  case "plinko":{const vals=[.2,.5,.5,1,1,1.5,2,5];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"ШАР ОСТАНОВИЛСЯ",mult:m,detail:"Шар попал в сектор ×"+m};}
-  case "wheel":{const vals=[0,.5,1,1.5,2,3,5,10];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"СЕКТОР КОЛЕСА",mult:m,detail:m>=5?"Редкий сектор! Отличный результат.":"Колесо остановилось на ×"+m};}
-  case "hilo":{const a=randomInt(2,14),b=randomInt(2,14),higher=Math.random()<.5;const win=higher?b>a:b<a;return {label:a+" → "+b,caption:higher?"ПРОГНОЗ: ВЫШЕ":"ПРОГНОЗ: НИЖЕ",mult:win?1.8:0,detail:win?"Верный прогноз!":"На этот раз прогноз не сбылся."};}
-  case "blackjack":{const p=randomInt(15,22),d=randomInt(15,22);const win=p<=21&&(d>21||p>d);const push=p===d;return {label:p+" : "+d,caption:"ТЫ  /  ДИЛЕР",mult:push?1:win?1.9:0,detail:push?"Ничья — ставка возвращена.":win?"Ты обошёл дилера!": "Дилер победил."};}
-  case "baccarat":{const p=randomInt(0,9),b=randomInt(0,9);const win=p>b;const tie=p===b;return {label:p+" : "+b,caption:"ИГРОК  /  БАНК",mult:tie?8:win?1.95:0,detail:tie?"Ничья — ×8!":win?"Победил игрок.":"Победил банк."};}
-  case "keno":{const hit=Math.random()<.2;return {label:hit?"ПОПАДАНИЕ":"МИМО",caption:hit?"ЧИСЛО УГАДАНО":"МИМО",mult:hit?5:0,detail:hit?"Есть попадание — ×5!":"Тираж не совпал с твоим числом."};}
-  case "crash":{const crash=+(1+Math.random()*3).toFixed(2);const cashout=+(1+Math.random()*2.5).toFixed(2);const win=cashout<crash;return {label:"×"+(win?cashout:crash),caption:win?"УСПЕЛ ЗАБРАТЬ":"КРАШ",mult:win?cashout:0,detail:win?"Ты забрал до падения графика!":"График рухнул раньше вывода."};}
-  case "limbo":{const m=+(Math.random()*4.8+.2).toFixed(2);return {label:"×"+m,caption:"СЛУЧАЙНЫЙ МНОЖИТЕЛЬ",mult:m>=2?2:0,detail:m>=2?"Цель ×2 пройдена!":"Множитель ниже цели ×2."};}
-  case "towers":{let steps=0;for(let i=0;i<4;i++){if(Math.random()<.68)steps++;else break;}const mult=steps===0?0:+Math.pow(1.35,steps).toFixed(2);return {label:steps+" / 4",caption:"ПРОЙДЕНО ЭТАЖЕЙ",mult,detail:steps===4?"Ты покорил башню!":steps?"Ты поднялся на "+steps+" этаж(а).":"Ловушка на первом этаже."};}
+  case "dice":{const n=randomInt(1,6);return {label:String(n),caption:"БРОСОК КУБИКА",mult:n>=5?1.9:0,detail:n>=5?"Выпало 5 или 6 — победа!":"Для победы нужно 5 или 6."};}
+  case "coin":{const side=Math.random()<.5?"ОРЁЛ":"РЕШКА";const win=Math.random()<.46;return {label:side,caption:side,mult:win?1.85:0,detail:"Монетка выбрала: "+side};}
+  case "roulette":{const n=randomInt(0,36);const mult=n===0?7:(n%2===1?1.85:0);return {label:String(n),caption:n===0?"ЗОЛОТОЙ СЕКТОР":n%2===0?"ЧЁРНОЕ":"КРАСНОЕ",mult,detail:n===0?"Редкий золотой сектор!":mult?"Красный сектор — выигрыш.":"Чёрный сектор в этот раз."};}
+  case "mines":{const safe=Math.random()<.49;return {label:safe?"SAFE":"МИНА",caption:safe?"БЕЗОПАСНО":"МИНА",mult:safe?1.8:0,detail:safe?"Ты нашёл безопасную ячейку.":"Мина! Ставка сгорела."};}
+  case "slots":{const symbols=["7","◆","●","✦","◇"];const a=symbols[randomInt(0,4)],b=symbols[randomInt(0,4)],c=symbols[randomInt(0,4)];const mult=a===b&&b===c?(a==="7"?7:a==="✦"?4:2.6):(a===b||b===c||a===c?1.35:0);return {label:a+" "+b+" "+c,caption:mult?"КОМБИНАЦИЯ":"НЕТ КОМБИНАЦИИ",mult,detail:mult>=3?"Три одинаковых символа!":mult?"Есть совпадение — небольшой выигрыш.":"Попробуй ещё раз."};}
+  case "plinko":{const vals=[.2,.35,.5,.5,.75,1,1,1.2,1.5,2,3];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"ШАР ОСТАНОВИЛСЯ",mult:m,detail:"Шар попал в сектор ×"+m};}
+  case "wheel":{const vals=[0,.3,.5,.5,.8,1,1,1.2,1.5,2,3,5];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"СЕКТОР КОЛЕСА",mult:m,detail:m>=5?"Редкий сектор! Отличный результат.":"Колесо остановилось на ×"+m};}
+  case "hilo":{const a=randomInt(2,14),b=randomInt(2,14),higher=Math.random()<.5;const win=higher?b>a:b<a;return {label:a+" → "+b,caption:higher?"ПРОГНОЗ: ВЫШЕ":"ПРОГНОЗ: НИЖЕ",mult:win?1.75:0,detail:win?"Верный прогноз!":"На этот раз прогноз не сбылся."};}
+  case "blackjack":{const p=randomInt(15,22),d=randomInt(15,22);const win=p<=21&&(d>21||p>d);const push=p===d;return {label:p+" : "+d,caption:"ТЫ  /  ДИЛЕР",mult:push?1:win?1.8:0,detail:push?"Ничья — ставка возвращена.":win?"Ты обошёл дилера!": "Дилер победил."};}
+  case "baccarat":{const p=randomInt(0,9),b=randomInt(0,9);const win=p>b;const tie=p===b;return {label:p+" : "+b,caption:"ИГРОК  /  БАНК",mult:tie?7:win?1.85:0,detail:tie?"Ничья — ×8!":win?"Победил игрок.":"Победил банк."};}
+  case "keno":{const hit=Math.random()<.16;return {label:hit?"ПОПАДАНИЕ":"МИМО",caption:hit?"ЧИСЛО УГАДАНО":"МИМО",mult:hit?5:0,detail:hit?"Есть попадание — ×5!":"Тираж не совпал с твоим числом."};}
+  case "crash":{const crash=+(1+Math.random()*3).toFixed(2);const cashout=+(1+Math.random()*2.5).toFixed(2);const win=cashout<crash&&Math.random()<.82;return {label:"×"+(win?cashout:crash),caption:win?"УСПЕЛ ЗАБРАТЬ":"КРАШ",mult:win?cashout:0,detail:win?"Ты забрал до падения графика!":"График рухнул раньше вывода."};}
+  case "limbo":{const m=+(Math.random()*4.8+.2).toFixed(2);return {label:"×"+m,caption:"СЛУЧАЙНЫЙ МНОЖИТЕЛЬ",mult:m>=2.5?2.25:0,detail:m>=2.5?"Цель ×2,5 пройдена!":"Множитель ниже цели ×2,5."};}
+  case "towers":{let steps=0;for(let i=0;i<4;i++){if(Math.random()<.58)steps++;else break;}const mult=steps===0?0:+Math.pow(1.45,steps).toFixed(2);return {label:steps+" / 4",caption:"ПРОЙДЕНО ЭТАЖЕЙ",mult,detail:steps===4?"Ты покорил башню!":steps?"Ты поднялся на "+steps+" этаж(а).":"Ловушка на первом этаже."};}
   default:return {label:"?",caption:"РЕЗУЛЬТАТ",mult:0,detail:"Попробуй ещё раз."};
  }
+}
+
+const ROUND_FRAMES={
+ dice:["⚄","⚂","⚅","⚀","…"],coin:["ОРЁЛ","РЕШКА","ОРЁЛ","РЕШКА","…"],roulette:["●","◉","◌","◉","…"],mines:["□ □ □","■ □ □","■ ■ □","■ ■ ■","…"],slots:["7 ◆ ●","◆ 7 ◇","● ● 7","✦ 7 ✦","…"],plinko:["●","●","●","●","…"],wheel:["×0.5","×1.2","×2","×0.8","…"],hilo:["2 → ?","? → 9","? → 6","? → 12","…"],blackjack:["♠ 8","♠ 14","♠ 18","♠ 20","…"],baccarat:["ИГРОК 2","БАНК 5","ИГРОК 7","БАНК 6","…"],keno:["04 · 11 · 19","08 · 14 · 23","03 · 17 · 31","06 · 22 · 35","…"],crash:["×1.02","×1.18","×1.43","×1.86","…"],limbo:["×0.8","×1.4","×1.9","×2.3","…"],towers:["ЭТАЖ 01","ЭТАЖ 02","ЭТАЖ 03","ЭТАЖ 04","…"]
+};
+function animateRound(id,done){
+ const display=$("displayResult"),caption=$("displayCaption"),frames=ROUND_FRAMES[id]||["…","…","…"],stage=$("gameDisplay");
+ stage.classList.remove("round-active");void stage.offsetWidth;stage.classList.add("round-"+id,"round-active");
+ let i=0;caption.textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · ИДЁТ ИГРА";
+ const tick=()=>{if(i<frames.length){display.textContent=frames[i];display.classList.remove("round-pop");void display.offsetWidth;display.classList.add("round-pop");i++;setTimeout(tick,145);}else{stage.classList.remove("round-active");done();}};
+ tick();
+}
+async function publishRoundHash(game,result){
+ try{const r=await fetch("/api/round-hash",{method:"POST",headers:apiHeaders(),body:JSON.stringify({game,result})});if(!r.ok)throw new Error("hash unavailable");const d=await r.json();$("roundHash").textContent=d.hash;$("roundNumber").textContent="РАУНД "+String(roundCounter).padStart(4,"0");}
+ catch{$("roundHash").textContent="Хеш временно недоступен";}
 }
 function play(){
  if(!currentGame)return;
  const input=$("betInput");let bet=Math.floor(Number(input.value));
  if(!Number.isFinite(bet)||bet<10){notify("Минимальная ставка — 10 CR");return;}
  if(bet>state.balance){notify("Недостаточно виртуальных кредитов");return;}
- const button=$("playButton");button.disabled=true;button.textContent="ИГРА ИДЁТ…";
- const display=$("displayResult");display.classList.remove("rolling");void display.offsetWidth;display.classList.add("rolling");
- $("displayCaption").textContent="ПРОВЕРЯЕМ УДАЧУ…";$("resultNote").className="result-note";$("resultNote").textContent="Результат формируется…";
- setTimeout(()=>{
-  const res=outcome(currentGame.id);const payout=Math.floor(bet*res.mult);const delta=payout-bet;
-  state.balance+=delta;state.played++;if(delta>0)state.wins++;const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;state.history.unshift({game:currentGame.name,delta,at:Date.now()});state.history=state.history.slice(0,20);save();updateStats();syncScore(points,delta>0);renderBoard("previewBoard",5);renderBoard("fullBoard",20);
-  display.textContent=res.label;$("displayCaption").textContent=res.caption;
+ const button=$("playButton");button.disabled=true;button.textContent="РАУНД ИДЁТ…";roundCounter++;
+ $("roundHash").textContent="Формируется MD5-хеш…";$("roundNumber").textContent="РАУНД "+String(roundCounter).padStart(4,"0");
+ $("resultNote").className="result-note";$("resultNote").textContent="Анимация раунда…";
+ const res=outcome(currentGame.id);
+ animateRound(currentGame.id,async()=>{
+  const payout=Math.floor(bet*res.mult),delta=payout-bet;
+  state.balance+=delta;state.played++;if(delta>0)state.wins++;
+  const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;
+  state.history.unshift({game:currentGame.name,delta,at:Date.now(),result:res.label});state.history=state.history.slice(0,30);save();updateStats();await syncScore(points,delta>0);renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+  $("displayResult").textContent=res.label;$("displayCaption").textContent=res.caption;
   const note=$("resultNote");note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");note.className="result-note "+(delta>0?"win":delta<0?"lose":"");
+  await publishRoundHash(currentGame.name,res.label);
   button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
- },750);
+ });
 }
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>b.dataset.page==="leaderboard"?showLeaderboard():showCasino()));
 document.querySelectorAll("[data-bottom]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.bottom==="casino")showCasino();else if(b.dataset.bottom==="leaderboard")showLeaderboard();else if(b.dataset.bottom==="transfer")showTransfer();else if(b.dataset.bottom==="more")showMore();}));
