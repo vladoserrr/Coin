@@ -76,7 +76,7 @@
         <p>Отправляй виртуальные кредиты участникам Coin по их Telegram username. Переводы доступны после запуска приложения из Telegram.</p>
         <div class="transfer-form"><label for="transferUsername">TELEGRAM USERNAME ПОЛУЧАТЕЛЯ</label><div class="username-input"><span>@</span><input id="transferUsername" placeholder="username" maxlength="32" autocomplete="off"></div><label for="transferAmount">СУММА ПЕРЕВОДА</label><input id="transferAmount" type="number" min="1" step="1" placeholder="Например, 250"><button class="btn btn-gold full-width" id="sendTransfer">Перевести CR <span>→</span></button></div>
         <div class="transfer-balance"><span>ТВОЙ БАЛАНС</span><strong id="transferBalance">10 000 CR</strong></div>
-        <div class="transfer-status"><span class="status-dot"></span> Функция переводов готовится к запуску</div>
+        <div class="transfer-status"><span class="status-dot"></span> Переводы между Telegram-игроками · только виртуальные CR</div>
       </div>
     </section>
 
@@ -106,7 +106,7 @@
   </nav>
 </div>
 
-<div class="modal-backdrop hidden" id="profileModal"><div class="modal"><button class="modal-close" id="profileClose">×</button><div class="eyebrow">PLAYER PROFILE</div><div class="profile-avatar" id="profileAvatar">V</div><h2>Твой профиль</h2><label for="nicknameInput">Игровое имя</label><input id="nicknameInput" maxlength="18" value="Vlad"><p class="profile-hint">Имя будет отображаться в таблице лидеров на этом устройстве.</p><button class="btn btn-gold full-width" id="saveProfile">Сохранить</button></div></div>
+<div class="modal-backdrop hidden" id="profileModal"><div class="modal"><button class="modal-close" id="profileClose">×</button><div class="eyebrow">PLAYER PROFILE</div><div class="profile-avatar" id="profileAvatar">V</div><h2>Твой профиль</h2><label for="nicknameInput">Игровое имя</label><input id="nicknameInput" maxlength="18" value="Vlad"><p class="profile-hint" id="profileTelegram">Профиль и аватар синхронизируются с Telegram при запуске внутри приложения.</p><button class="btn btn-gold full-width" id="saveProfile">Сохранить</button></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="/app.js"></script>
