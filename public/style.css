@@ -226,3 +226,15 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
  .slot-machine.rolling .slot-reel,.plinko-board.rolling .plinko-ball,
  .crash-chart.rolling svg path,.limbo-meter.rolling .limbo-needle{animation-duration:1ms!important;animation-iteration-count:1!important}
 }
+
+.coin-scene.rolling{animation:none}
+.card-table.rolling .playing-card{animation:coinCardDeal .8s cubic-bezier(.2,.7,.2,1) both}
+.card-table.rolling .playing-card:nth-child(2){animation-delay:.12s}
+@keyframes coinCardDeal{0%{transform:translateY(16px) rotate(-3deg);opacity:.45}100%{transform:translateY(0) rotate(0);opacity:1}}
+.tile-board.rolling span{animation:coinTilePulse 1.15s ease-in-out infinite alternate}
+.tile-board.rolling span:nth-child(2n){animation-delay:.12s}
+.tile-board.rolling span:nth-child(3n){animation-delay:.24s}
+@keyframes coinTilePulse{0%{transform:translateY(0);filter:brightness(1)}100%{transform:translateY(-3px);filter:brightness(1.12)}}
+.keno-board.rolling span{animation:coinKenoPulse .85s ease-in-out infinite alternate}
+.keno-board.rolling span:nth-child(3n){animation-delay:.12s}
+@keyframes coinKenoPulse{from{transform:scale(1)}to{transform:scale(1.045)}}
