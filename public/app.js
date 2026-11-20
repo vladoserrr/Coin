@@ -56,7 +56,7 @@ async function initTelegram(){
    telegramUser=d.user||telegramUser;playerId=d.player.id||playerId;isCoinAdmin=!!d.admin;
    state.nickname=d.player.nickname||state.nickname;state.balance=Number(d.player.balance??state.balance);
    state.telegramUsername=d.player.username||"";state.telegramPhoto=d.player.photoUrl||"";
-   save();updateStats();if(state.telegramPhoto){const avatar=document.getElementById("profileOpen");avatar.innerHTML='<img src="'+escapeHtml(state.telegramPhoto)+'" alt="" referrerpolicy="no-referrer">';}if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
+   save();updateStats();const profileLine=document.getElementById("profileTelegram");if(profileLine)profileLine.textContent=(d.player.username?"@"+d.player.username:"Telegram аккаунт без username")+" · профиль и аватар синхронизированы";if(state.telegramPhoto){const avatar=document.getElementById("profileOpen");avatar.innerHTML='<img src="'+escapeHtml(state.telegramPhoto)+'" alt="" referrerpolicy="no-referrer">';}if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
   }
  }catch(e){console.warn("Coin Telegram auth:",e.message);}
 }
