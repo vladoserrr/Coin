@@ -80,7 +80,7 @@ async function syncScore(points,won){
 function renderBoard(target,limit){
  const board=buildBoard().slice(0,limit);
  const head='<div class="leader-row leader-head"><span>МЕСТО</span><span>ИГРОК</span><span class="leader-games">СЫГРАНО</span><span style="text-align:right">ОЧКИ</span></div>';
- const rows=board.map((p,i)=>'<div class="leader-row"><span class="rank '+(i<3?'r'+(i+1):'')+'">'+(i===0?'♛':String(i+1).padStart(2,"0"))+'</span><span class="player-cell"><span class="player-avatar">'+escapeHtml(p.initial)+'</span><span>'+escapeHtml(p.name)+(p.me?'<small>ТВОЙ ПРОФИЛЬ</small>':'<small>УЧАСТНИК СЕЗОНА · DEMO</small>')+'</span></span><span class="score-cell leader-games">'+fmt(p.games)+'<small>ИГР</small></span><span class="score-cell">'+fmt(p.score)+'<small>ОЧКОВ</small></span></div>').join("");
+ const rows=board.map((p,i)=>'<div class="leader-row"><span class="rank '+(i<3?'r'+(i+1):'')+'">'+(i===0?'♛':String(i+1).padStart(2,"0"))+'</span><span class="player-cell"><span class="player-avatar">'+escapeHtml(p.initial)+'</span><span>'+escapeHtml(p.name)+(p.me?'<small>ТВОЙ ПРОФИЛЬ</small>':(remotePlayers.length?'<small>УЧАСТНИК СЕЗОНА</small>':'<small>ДЕМО-ИГРОК</small>'))+'</span></span><span class="score-cell leader-games">'+fmt(p.games)+'<small>ИГР</small></span><span class="score-cell">'+fmt(p.score)+'<small>ОЧКОВ</small></span></div>').join("");
  $(target).innerHTML=head+rows;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
