@@ -7,7 +7,7 @@ const root = path.join(__dirname, "public");
 const dataDir = path.join(__dirname, "data");
 const playersFile = path.join(dataDir, "players.json");
 const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".svg":"image/svg+xml" };
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || process.env.TELEGRAM_TOKEN || "";
 const ADMIN_USERNAME = "vladubrat7";
 
 function readPlayers(){try{return JSON.parse(fs.readFileSync(playersFile,"utf8"));}catch{return {};}}
