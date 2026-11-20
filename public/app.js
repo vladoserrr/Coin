@@ -132,6 +132,7 @@ function renderGames(){
  document.querySelectorAll("[data-game]").forEach(el=>el.addEventListener("click",()=>openGame(el.dataset.game)));
 }
 function openGame(id){
+ document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");
  currentGame=GAMES.find(g=>g.id===id);if(!currentGame)return;
  $("stageIcon").innerHTML=svgIcon(currentGame.id);$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
  $("displayResult").textContent="?";$("displayCaption").textContent="ГОТОВ К ИГРЕ";$("resultNote").textContent=currentGame.hint+" · Выбери ставку и нажми «Играть».";
@@ -139,20 +140,23 @@ function openGame(id){
  $("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");
  $("gameStage").scrollIntoView({behavior:"smooth",block:"start"});
 }
-function showMore(){["gameStage","gamesSection","leaderboardPreview","leaderboardPage","transferPage"].forEach(id=>$(id).classList.add("hidden"));$("morePage").classList.remove("hidden");document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="more"));if(isCoinAdmin)$("adminEntry")?.classList.remove("hidden");$("morePage").scrollIntoView({behavior:"smooth",block:"start"});}
+function showMore(){["gameStage","gamesSection","leaderboardPreview","leaderboardPage","transferPage"].forEach(id=>$(id).classList.add("hidden"));document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");$("morePage").classList.remove("hidden");document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="more"));if(isCoinAdmin)$("adminEntry")?.classList.remove("hidden");$("morePage").scrollIntoView({behavior:"smooth",block:"start"});}
 function setProfileAvatar(el,url,name){if(!el)return;if(url){el.innerHTML='<img src="'+escapeHtml(url)+'" alt="" referrerpolicy="no-referrer">';}else el.textContent=(name||"И").slice(0,1).toUpperCase();}
 function showCasino(){
+ document.querySelector(".hero").classList.remove("hidden");document.querySelector(".stats-row").classList.remove("hidden");
  $("gameStage").classList.add("hidden");$("gamesSection").classList.remove("hidden");$("leaderboardPreview").classList.remove("hidden");$("leaderboardPage").classList.add("hidden");$("transferPage").classList.add("hidden");$("morePage").classList.add("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="casino"));
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="casino"));
 }
 function showLeaderboard(){
+ document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");
  $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("transferPage").classList.add("hidden");$("morePage").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="leaderboard"));
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="leaderboard"));
  renderBoard("fullBoard",20);refreshBoard(activePeriod);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function showTransfer(){
+ document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");
  $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("leaderboardPage").classList.add("hidden");$("morePage").classList.add("hidden");$("transferPage").classList.remove("hidden");updateStats();$("transferPage").scrollIntoView({behavior:"smooth",block:"start"});
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="transfer"));
 }
