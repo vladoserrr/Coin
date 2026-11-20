@@ -58,6 +58,7 @@
           <div class="action-control"><button class="btn btn-gold btn-play" id="playButton">ИГРАТЬ <span>→</span></button><small>Только виртуальные кредиты</small></div>
         </div>
         <div class="result-note" id="resultNote">Выбери ставку и нажми «Играть».</div>
+        <div class="round-proof"><div class="round-proof-top"><span>MD5 ХЕШ РАУНДА</span><span id="roundNumber">РАУНД —</span></div><code id="roundHash">Хеш появится после завершения раунда</code><small>Идентификатор результата · не является гарантией честности исхода</small></div>
       </div>
     </section>
 
@@ -72,10 +73,21 @@
         <div class="transfer-symbol"><svg viewBox="0 0 24 24"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg></div>
         <div class="eyebrow">COIN WALLET</div>
         <h2>Перевод кредитов</h2>
-        <p>Внутренние переводы виртуальных CR между игроками появятся в следующем обновлении. Пополнений и вывода реальных денег здесь нет.</p>
+        <p>Отправляй виртуальные кредиты участникам Coin по их Telegram username. Переводы доступны после запуска приложения из Telegram.</p>
+        <div class="transfer-form"><label for="transferUsername">TELEGRAM USERNAME ПОЛУЧАТЕЛЯ</label><div class="username-input"><span>@</span><input id="transferUsername" placeholder="username" maxlength="32" autocomplete="off"></div><label for="transferAmount">СУММА ПЕРЕВОДА</label><input id="transferAmount" type="number" min="1" step="1" placeholder="Например, 250"><button class="btn btn-gold full-width" id="sendTransfer">Перевести CR <span>→</span></button></div>
         <div class="transfer-balance"><span>ТВОЙ БАЛАНС</span><strong id="transferBalance">10 000 CR</strong></div>
         <div class="transfer-status"><span class="status-dot"></span> Функция переводов готовится к запуску</div>
       </div>
+    </section>
+
+    <section class="more-page hidden" id="morePage">
+      <div class="section-heading"><div><div class="eyebrow">COIN / MORE</div><h2>Ещё</h2><p>Настройки клуба и инструменты игрока</p></div></div>
+      <div class="more-grid">
+        <article class="more-card"><div class="more-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></div><h3>Правила клуба</h3><p>Только виртуальные CR. Без пополнений и вывода реальных денег.</p></article>
+        <article class="more-card"><div class="more-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8m-8 4h5"/></svg></div><h3>История раундов</h3><p id="roundHistoryCount">Завершённые раунды сохраняются в профиле на этом устройстве.</p></article>
+      </div>
+      <div class="admin-entry hidden" id="adminEntry"><div><div class="eyebrow">PRIVATE ACCESS</div><h3>Инструменты администратора</h3><p>Панель доступна только подтверждённому аккаунту @vladubrat7.</p></div><button class="btn btn-gold" id="openAdmin">Админ панель <span>→</span></button></div>
+      <div class="admin-panel hidden" id="adminPanel"><div class="admin-panel-head"><div><div class="eyebrow">ADMIN / BROADCAST</div><h3>Админ панель</h3></div><button class="icon-close" id="closeAdmin" aria-label="Закрыть">×</button></div><label for="broadcastText">ТЕКСТ РАССЫЛКИ</label><textarea id="broadcastText" rows="5" maxlength="3500" placeholder="Напиши сообщение для игроков Coin..."></textarea><div class="broadcast-actions"><button class="btn btn-ghost" id="sendSelf">Отправить только себе</button><button class="btn btn-gold" id="sendAll">Отправить всем</button></div><p class="admin-hint" id="broadcastStatus">Рассылка отправляется через Telegram Bot API. Бот должен быть подключён и пользователи должны начать с ним диалог.</p></div>
     </section>
 
     <section class="leaderboard-page hidden" id="leaderboardPage">
@@ -90,11 +102,13 @@
     <button class="bottom-nav-item" data-bottom="leaderboard"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg></span><span>Топы</span></button>
     <button class="bottom-nav-item" data-bottom="transfer"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg></span><span>Перевод</span></button>
     <button class="bottom-nav-item" id="bottomProfile"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.3 3-5 7-5s6.3 1.7 7 5"/></svg></span><span>Профиль</span></button>
+    <button class="bottom-nav-item" data-bottom="more"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Ещё</span></button>
   </nav>
 </div>
 
 <div class="modal-backdrop hidden" id="profileModal"><div class="modal"><button class="modal-close" id="profileClose">×</button><div class="eyebrow">PLAYER PROFILE</div><div class="profile-avatar" id="profileAvatar">V</div><h2>Твой профиль</h2><label for="nicknameInput">Игровое имя</label><input id="nicknameInput" maxlength="18" value="Vlad"><p class="profile-hint">Имя будет отображаться в таблице лидеров на этом устройстве.</p><button class="btn btn-gold full-width" id="saveProfile">Сохранить</button></div></div>
 <div class="toast" id="toast"></div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>
