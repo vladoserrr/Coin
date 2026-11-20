@@ -32,6 +32,7 @@ let state = load("coinState", {balance:10000,wins:0,played:0,score:0,nickname:"V
 let currentGame = null;
 let activeFilter = "all";
 let remotePlayers = [];
+let activePeriod = "season";
 let playerId = load("coinPlayerId", "");
 if (!playerId) {
  playerId = "coin_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -57,9 +58,9 @@ function buildBoard(){
  players.push({name:state.nickname||"Игрок",score:state.score,games:state.played,initial:(state.nickname||"V").slice(0,1).toUpperCase(),me:true});
  return players.sort((a,b)=>b.score-a.score);
 }
-async function refreshBoard(){
+async function refreshBoard(period=activePeriod){
  try{
-  const response=await fetch("/api/leaderboard",{cache:"no-store"});
+  const response=await fetch("/api/leaderboard?period="+encodeURIComponent(period),{cache:"no-store"});
   if(!response.ok)throw new Error("leaderboard unavailable");
   const data=await response.json();remotePlayers=data.players||[];
   updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
@@ -103,7 +104,7 @@ function showCasino(){
 function showLeaderboard(){
  $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="leaderboard"));
- renderBoard("fullBoard",20);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
+ renderBoard("fullBoard",20);refreshBoard(activePeriod);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function outcome(id){
@@ -143,6 +144,7 @@ function play(){
 }
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>b.dataset.page==="leaderboard"?showLeaderboard():showCasino()));
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{activeFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderGames();}));
+document.querySelectorAll("[data-period]").forEach(b=>b.addEventListener("click",()=>{activePeriod=b.dataset.period;document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x===b));refreshBoard(activePeriod);}));
 $("jumpGames").addEventListener("click",()=>{showCasino();$("gamesSection").scrollIntoView({behavior:"smooth"});});
 $("backGames").addEventListener("click",showCasino);
 $("playButton").addEventListener("click",play);
