@@ -168,3 +168,7 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
 .generic-scene{height:140px;width:180px;border-radius:24px;background:linear-gradient(145deg,#263f5b,#101b2a);display:grid;place-items:center;color:#f3d58d}.generic-orb{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff,#d5a94f 55%,#6e4a1b);box-shadow:0 0 35px #d5a94f77}
 @keyframes diceRoll{to{transform:rotateX(230deg) rotateY(170deg) translateY(-15px)}}@keyframes coinFlip{to{transform:rotateY(900deg)}}@keyframes wheelSpin{to{transform:rotate(1440deg)}}@keyframes slotRoll{to{transform:translateY(-8px);filter:blur(2px)}}@keyframes plinkoBounce{to{transform:translate(34px,140px)}}@keyframes crashRise{to{transform:translateY(-8px)}}@keyframes needleSpin{to{transform:rotate(400deg)}}
 @media(max-width:520px){.choice-btn{flex:1 1 calc(33.33% - 8px);padding:10px 7px;font-size:11px}.slot-reel{width:60px;height:75px}.wheel-disc{width:160px;height:160px}}
+
+.roulette-disc{background:conic-gradient(#13835d 0 9.7deg,#b72f43 9.7deg 19.4deg,#17263d 19.4deg 29.1deg,#b72f43 29.1deg 38.8deg,#17263d 38.8deg 48.5deg,#b72f43 48.5deg 58.2deg,#17263d 58.2deg 67.9deg,#b72f43 67.9deg 77.6deg,#17263d 77.6deg 360deg)}
+.prize-disc{background:conic-gradient(#245b91 0 45deg,#b72f43 45deg 90deg,#245b91 90deg 135deg,#d5a64e 135deg 180deg,#b72f43 180deg 225deg,#245b91 225deg 270deg,#b72f43 270deg 315deg,#d5a64e 315deg)}
+.tile-board span.danger{background:linear-gradient(145deg,#b84a4a,#632d3b);color:#fff}
