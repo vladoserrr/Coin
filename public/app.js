@@ -49,5 +49,5 @@ function adminAction(mode){if(!isAdmin){toast("Нет доступа");return;}c
 $("actionSubmit").addEventListener("click",async()=>{if(!actionMode.startsWith("admin:"))return;const mode=actionMode.slice(6);let url,data;if(mode==="broadcast"){url="/api/admin/broadcast";data={message:$("admMessage").value};}if(mode==="promo"){url="/api/admin/promo";data={code:$("admCode").value,amount:$("admAmount").value,limit:$("admLimit").value};}if(mode==="give"||mode==="take"){url="/api/admin/balance";data={to:$("admTo").value,amount:$("admAmount").value,action:mode==="take"?"remove":"add"};}if(mode==="ban"){url="/api/admin/ban";data={to:$("admTo").value,banned:true};}try{const d=await api(url,data);toast(d.message||"Готово");$("actionModal").classList.remove("open");if(mode==="give"||mode==="take")refreshProfile();}catch(e){toast(e.message);}});
 $("channelDone").addEventListener("click",()=>$("channelModal").classList.remove("open"));
 load().then(()=>{useReferral();$("channelModal").classList.add("open");});
-setInterval(async()=>{if(!state)return;try{const d=await api("/api/profile",{});setState(d.player);}catch{}},5000);
+setInterval(()=>{if(state&&state.energy<state.maxEnergy){state.energy=Math.min(state.maxEnergy,state.energy+1);render();}},1000);\nsetInterval(async()=>{if(!state)return;try{const d=await api("/api/profile",{});setState(d.player);}catch{}},5000);
 })();
