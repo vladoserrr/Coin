@@ -178,3 +178,51 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
 .wheel-disc{transition:transform 2.15s cubic-bezier(.12,.72,.12,1)}.wheel-disc.rolling{animation:wheelSpin .45s linear infinite}.wheel-disc.landed{transform:rotate(var(--landing-angle))}.wheel-labels{position:absolute;inset:0;border-radius:50%}.wheel-labels span{position:absolute;left:50%;top:50%;width:24px;text-align:center;color:#fff;font-size:8px;font-weight:900;transform:rotate(calc(var(--i)*1turn/var(--sector-count))) translateY(var(--label-radius,-64px)) rotate(calc(var(--i)*-1turn/var(--sector-count)));transform-origin:center}.wheel-disc.roulette-disc .wheel-labels span{font-size:7px;width:18px;line-height:1;text-shadow:0 1px 2px #000}.wheel-disc b{z-index:2}
 
 .blackjack-actions{display:flex;gap:10px;margin:14px 0}.blackjack-actions .btn{flex:1}.blackjack-hands{display:grid;gap:14px;width:100%;max-width:360px}.blackjack-hand{padding:12px;border:1px solid #ffffff20;border-radius:14px;background:#102035}.blackjack-hand>small{display:block;margin-bottom:8px;color:#b6c7da;font-size:10px;font-weight:800}.blackjack-hand .card-table{flex-wrap:wrap;gap:7px}.blackjack-hand .playing-card{width:48px;height:70px;padding:7px;font-size:18px}.blackjack-hand .playing-card small{font-size:14px}.card-hidden{background:repeating-linear-gradient(45deg,#1e4164,#1e4164 6px,#2d5c83 6px,#2d5c83 12px);color:#fff!important}
+
+
+/* COIN smooth game motion: one stable scene per round, no blur or frame resets */
+.wheel-labels{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.wheel-labels span{
+ position:absolute;left:50%;top:50%;width:14px;height:12px;line-height:12px;
+ display:block;text-align:center;white-space:nowrap;color:#fff;font-size:7px;font-weight:900;
+ text-shadow:0 1px 2px #000;
+ transform:translate(-50%,-50%) rotate(calc(var(--i)*1turn/var(--sector-count))) translateY(var(--label-radius)) rotate(calc(var(--i)*-1turn/var(--sector-count)));
+ transform-origin:center;
+}
+.wheel-disc.roulette-disc .wheel-labels span{width:13px;font-size:6.5px;letter-spacing:-.35px}
+.wheel-disc.landed{transition:none;transform:rotate(var(--landing-angle))}
+.wheel-scene.rolling .wheel-disc{animation:coinWheelFinish 3.4s cubic-bezier(.12,.66,.12,1) forwards;transition:none;will-change:transform}
+@keyframes coinWheelFinish{0%{transform:rotate(0deg)}100%{transform:rotate(calc(1800deg + var(--landing-angle)))}}
+
+.dice-scene.rolling .die{animation:coinDiceSoft 2.5s cubic-bezier(.35,.05,.25,1) infinite;will-change:transform}
+.dice-scene.rolling .die:nth-child(2){animation-delay:.12s}
+@keyframes coinDiceSoft{0%,100%{transform:translateY(0) rotateX(0) rotateY(0)}28%{transform:translateY(-9px) rotateX(105deg) rotateY(75deg)}58%{transform:translateY(1px) rotateX(205deg) rotateY(165deg)}82%{transform:translateY(-3px) rotateX(275deg) rotateY(245deg)}}
+
+.coin-scene.rolling .coin-disc{animation:coinFlipSoft .72s ease-in-out infinite;transform-style:preserve-3d}
+@keyframes coinFlipSoft{0%{transform:rotateY(0deg) translateY(0)}50%{transform:rotateY(180deg) translateY(-5px)}100%{transform:rotateY(360deg) translateY(0)}}
+
+.slot-machine.rolling .slot-reel{animation:coinSlotSoft .58s cubic-bezier(.45,.05,.35,1) infinite;filter:none;will-change:transform}
+.slot-machine.rolling .slot-reel:nth-child(2){animation-delay:.10s}
+.slot-machine.rolling .slot-reel:nth-child(3){animation-delay:.20s}
+@keyframes coinSlotSoft{0%,100%{transform:translateY(-5px)}50%{transform:translateY(5px)}}
+
+.plinko-board.rolling .plinko-ball{animation:coinPlinkoDrop 1.35s cubic-bezier(.42,0,.58,1) infinite alternate;will-change:transform}
+@keyframes coinPlinkoDrop{0%{transform:translate(-50%,0)}35%{transform:translate(calc(-50% - 13px),48px)}68%{transform:translate(calc(-50% + 17px),104px)}100%{transform:translate(calc(-50% + 28px),145px)}}
+
+.tile-board span,.keno-board span{transition:background-color .35s ease,color .35s ease,transform .35s ease}
+.keno-board span.hit{animation:coinKenoReveal .7s ease both}
+@keyframes coinKenoReveal{0%{transform:scale(.86);opacity:.65}65%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+
+.crash-chart.rolling svg{animation:none}
+.crash-chart.rolling svg path{stroke-dasharray:500;stroke-dashoffset:500;animation:coinChartDraw 2.65s cubic-bezier(.25,.1,.2,1) forwards}
+@keyframes coinChartDraw{to{stroke-dashoffset:0}}
+.limbo-meter.rolling .limbo-needle{animation:coinNeedleEase 2.6s cubic-bezier(.3,.05,.2,1) infinite}
+@keyframes coinNeedleEase{0%,100%{transform:rotate(-125deg)}50%{transform:rotate(220deg)}}
+.generic-scene .generic-orb{animation:coinOrbBreath 2.1s ease-in-out infinite}
+@keyframes coinOrbBreath{0%,100%{transform:scale(.96)}50%{transform:scale(1.04)}}
+
+@media(prefers-reduced-motion:reduce){
+ .wheel-scene.rolling .wheel-disc,.dice-scene.rolling .die,.coin-scene.rolling .coin-disc,
+ .slot-machine.rolling .slot-reel,.plinko-board.rolling .plinko-ball,
+ .crash-chart.rolling svg path,.limbo-meter.rolling .limbo-needle{animation-duration:1ms!important;animation-iteration-count:1!important}
+}
