@@ -6,12 +6,15 @@ const crypto = require("crypto");
 const root = path.join(__dirname, "public");
 const dataDir = path.join(__dirname, "data");
 const playersFile = path.join(dataDir, "players.json");
+const promosFile = path.join(dataDir, "promos.json");
 const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".json":"application/json; charset=utf-8", ".svg":"image/svg+xml" };
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || process.env.TELEGRAM_TOKEN || "";
 const ADMIN_USERNAME = "vladubrat7";
 
 function readPlayers(){try{return JSON.parse(fs.readFileSync(playersFile,"utf8"));}catch{return {};}}
 function writePlayers(players){fs.mkdirSync(dataDir,{recursive:true});fs.writeFileSync(playersFile,JSON.stringify(players,null,2));}
+function readPromos(){try{return JSON.parse(fs.readFileSync(promosFile,"utf8"));}catch{return {};}}
+function writePromos(promos){fs.mkdirSync(dataDir,{recursive:true});fs.writeFileSync(promosFile,JSON.stringify(promos,null,2));}
 function send(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"same-origin"});res.end(JSON.stringify(data));}
 function readBody(req){return new Promise((resolve,reject)=>{let raw="";req.on("data",chunk=>{raw+=chunk;if(raw.length>20000)reject(new Error("Payload too large"));});req.on("end",()=>{try{resolve(JSON.parse(raw||"{}"));}catch{reject(new Error("Invalid JSON"));}});req.on("error",reject);});}
 function cleanName(v){return String(v||"Игрок").replace(/[<>\u0000-\u001f]/g,"").trim().slice(0,32)||"Игрок";}
@@ -87,6 +90,12 @@ const server=http.createServer(async(req,res)=>{
    sender.balance-=amount;recipient.balance=(recipient.balance||0)+amount;sender.updatedAt=recipient.updatedAt=Date.now();
    writePlayers(players);return send(res,200,{ok:true,balance:sender.balance,recipient:recipient.nickname,amount});
   }catch(e){return send(res,400,{error:e.message});}
+ }
+ if(pathname==="/api/admin/promos"&&req.method==="POST"){
+  try{const user=auth(req);if(!user||user.username!==ADMIN_USERNAME)return send(res,403,{error:"Forbidden"});const body=await readBody(req),code=String(body.code||"").toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,32),reward=Math.floor(Number(body.reward)),maxUses=Math.floor(Number(body.maxUses)||0);if(code.length<3)return send(res,400,{error:"Код должен содержать минимум 3 символа"});if(!Number.isFinite(reward)||reward<1||reward>1000000)return send(res,400,{error:"Награда должна быть от 1 до 1 000 000 CR"});if(maxUses<0||maxUses>1000000)return send(res,400,{error:"Некорректный лимит активаций"});const promos=readPromos();if(promos[code])return send(res,409,{error:"Такой промокод уже существует"});promos[code]={code,reward,maxUses,uses:0,usedBy:[],createdAt:Date.now()};writePromos(promos);return send(res,200,{ok:true,promo:{code,reward,maxUses,uses:0}});}catch(e){return send(res,400,{error:e.message});}
+ }
+ if(pathname==="/api/promo/redeem"&&req.method==="POST"){
+  try{const user=auth(req);if(BOT_TOKEN&&!user)return send(res,401,{error:"Открой Coin через Telegram"});const body=await readBody(req),code=String(body.code||"").toUpperCase().replace(/[^A-Z0-9_-]/g,"").slice(0,32),id=user?"tg_"+user.id:String(body.playerId||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,80);if(!code||!id)return send(res,400,{error:"Укажи промокод"});const promos=readPromos(),promo=promos[code];if(!promo)return send(res,404,{error:"Промокод не найден"});if(promo.maxUses>0&&promo.uses>=promo.maxUses)return send(res,409,{error:"Лимит активаций промокода исчерпан"});if((promo.usedBy||[]).includes(id))return send(res,409,{error:"Ты уже активировал этот промокод"});const players=readPlayers(),p=user?playerFor(players,user):(players[id]||{id,nickname:"Игрок",balance:10000,score:0,games:0,wins:0,createdAt:Date.now()});p.balance=Math.min(100000000,Math.max(0,Number(p.balance)||0)+promo.reward);promo.uses=(promo.uses||0)+1;promo.usedBy=[...(promo.usedBy||[]),id];players[id]=p;writePlayers(players);writePromos(promos);return send(res,200,{ok:true,reward:promo.reward,balance:p.balance});}catch(e){return send(res,400,{error:e.message});}
  }
  if(pathname==="/api/admin/broadcast"&&req.method==="POST"){
   try{
