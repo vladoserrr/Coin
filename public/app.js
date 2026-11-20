@@ -136,10 +136,12 @@ function renderGames(){
  document.querySelectorAll("[data-game]").forEach(el=>el.addEventListener("click",()=>openGame(el.dataset.game)));
 }
 function openGame(id){
+ if(blackjackRound&&!blackjackRound.finished&&id!=="blackjack"){notify("Заверши текущую раздачу в блэкджеке");id="blackjack";}
  clearGameAnimation();
  const playBtn=$("playButton");if(playBtn){playBtn.disabled=false;playBtn.innerHTML='ИГРАТЬ <span>→</span>';}
  document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");
  currentGame=GAMES.find(g=>g.id===id);if(!currentGame)return;gameChoice="";renderGameOptions();
+ $("gameDisplay").innerHTML='<div class="display-orbit"></div><div class="display-result" id="displayResult">?</div><div class="display-caption" id="displayCaption">ГОТОВ К ИГРЕ</div>';$("blackjackActions").classList.add("hidden");
  $("stageIcon").innerHTML=svgIcon(currentGame.id);$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
  $("displayResult").textContent="?";$("displayCaption").textContent="ГОТОВ К ИГРЕ";$("resultNote").textContent=currentGame.hint+" · Выбери ставку и нажми «Играть».";
  $("resultNote").className="result-note";$("blackjackActions").classList.toggle("hidden",!(currentGame.id==="blackjack"&&blackjackRound));if(currentGame.id==="blackjack"&&blackjackRound)renderBlackjack();$("gameStage").classList.remove("hidden");
@@ -241,12 +243,12 @@ async function publishRoundHash(game,result){
  catch{$("roundHash").textContent="Хеш временно недоступен";}
 }
 
-function blackjackValue(cards){return cards.reduce((sum,c)=>sum+(c===1?11:c>=10?10:c),0);}
+function blackjackValue(cards){let sum=0,aces=0;for(const c of cards){if(c===1){sum+=11;aces++;}else sum+=c>=10?10:c;}while(sum>21&&aces){sum-=10;aces--;}return sum;}
 function blackjackCard(v){return v===1?"A":v===11?"J":v===12?"Q":v===13?"K":String(v);}
 function renderBlackjack(reveal=false){
  const r=blackjackRound;if(!r)return;const total=blackjackValue(r.player),dealer=blackjackValue(r.dealer);
  const card=(v,hidden=false)=>'<div class="playing-card '+(hidden?"card-hidden":"")+'">'+(hidden?"?":blackjackCard(v))+'<small>'+(hidden?"◆":v===1||v>=11?"♠":"♥")+'</small></div>';
- $("gameDisplay").innerHTML='<div class="display-caption">БЛЭКДЖЕК · ТВОЙ ХОД</div><div class="blackjack-hands"><div class="blackjack-hand"><small>ТВОИ КАРТЫ · '+total+'</small><div class="card-table">'+r.player.map(v=>card(v)).join("")+'</div></div><div class="blackjack-hand"><small>ДИЛЕР · '+(reveal?dealer:"?")+'</small><div class="card-table">'+r.dealer.map((v,i)=>card(v,!reveal&&i===1)).join("")+'</div></div></div><div class="display-result">'+(total>21?"ПЕРЕБОР":total===21?"21":"ТВОЙ ХОД")+'</div>';
+ $("gameDisplay").innerHTML='<div class="display-caption" id="displayCaption">БЛЭКДЖЕК · ТВОЙ ХОД</div><div class="blackjack-hands"><div class="blackjack-hand"><small>ТВОИ КАРТЫ · '+total+'</small><div class="card-table">'+r.player.map(v=>card(v)).join("")+'</div></div><div class="blackjack-hand"><small>ДИЛЕР · '+(reveal?dealer:"?")+'</small><div class="card-table">'+r.dealer.map((v,i)=>card(v,!reveal&&i===1)).join("")+'</div></div></div><div class="display-result" id="displayResult">'+(total>21?"ПЕРЕБОР":total===21?"21":"ТВОЙ ХОД")+'</div>';
  $("blackjackActions").classList.toggle("hidden",r.finished);$("playButton").disabled=!r.finished;$("playButton").innerHTML=r.finished?'ИГРАТЬ СНОВА <span>→</span>':'РАУНД ИДЁТ…';
 }
 function finishBlackjack(reason){
