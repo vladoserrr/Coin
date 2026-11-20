@@ -1,78 +1,33 @@
 <!doctype html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f6f9ff">
-<meta name="description" content="Пончик — кликер с энергией, улучшениями и рейтингом игроков">
-<title>Пончик — кликер</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
-</head>
-<body>
-<div class="app">
-<header class="topbar">
-  <a class="logo" href="#" aria-label="Пончик"><span class="logo-mark">D</span><span>ПОНЧИК</span></a>
-  <div class="balance-chip"><span class="donut-mini" aria-hidden="true"></span><strong id="headerBalance">0</strong></div>
-</header>
-<nav class="tabs" aria-label="Навигация">
-  <button class="tab active" data-page="home"><span class="tab-icon">⌂</span>Меню</button>
-  <button class="tab" data-page="top"><span class="tab-icon">♛</span>Топ</button>
-  <button class="tab" data-page="donuts"><span class="tab-icon">◉</span>Пончики</button>
-  <button class="tab" data-page="more"><span class="tab-icon">•••</span>Ещё</button>
-</nav>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f6f9ff"><meta name="description" content="Пончик — кликер"><title>Пончик — кликер</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/style.css"></head>
+<body><div class="app">
+<header class="topbar"><a class="logo" href="#" aria-label="Пончик"><span class="logo-mark">D</span><span>ПОНЧИК</span></a><div class="balance-chip"><span class="donut-mini"></span><strong id="headerBalance">0</strong></div></header>
+<nav class="tabs" aria-label="Навигация"><button class="tab active" data-page="home">⌂ Меню</button><button class="tab" data-page="top">♛ Топ</button><button class="tab" data-page="donuts">◉ Пончики</button><button class="tab" data-page="more">••• Ещё</button></nav>
 <main>
 <section class="page active" id="page-home">
-  <div class="welcome"><div><p class="eyebrow">ТВОЯ ПОНЧИКОВАЯ</p><h1>Кликай и расти!</h1><p class="sub">Каждый тап приближает тебя к следующему уровню.</p></div><div class="level-pill">УР. <b id="levelValue">1</b></div></div>
-  <div class="wallet-card">
-    <div class="wallet-label">ТВОЙ БАЛАНС</div>
-    <div class="wallet-amount"><span class="donut-mini"></span><strong id="balanceValue">0</strong></div>
-    <div class="wallet-bottom"><span>Уровень <b id="levelInline">1</b></span><span id="xpLabel">0 / 35 XP</span></div>
-    <div class="xp-track"><i id="xpBar"></i></div>
-  </div>
-  <div class="energy-row"><div><span class="energy-symbol">⚡</span><b>Энергия</b><strong id="energyValue">100 / 100</strong></div><span id="energyTimer">Полная</span></div>
-  <div class="energy-track"><i id="energyBar"></i></div>
-  <div class="tap-area">
-    <div class="tap-hint">НАЖИМАЙ НА ПОНЧИК</div>
-    <button class="tap-button" id="tapButton" aria-label="Кликнуть по пончику">
-      <span class="tap-glow"></span>
-      <svg class="big-donut" viewBox="0 0 240 240" role="img" aria-label="Пончик">
-        <defs><linearGradient id="dough" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffdca7"/><stop offset="1" stop-color="#d98b4b"/></linearGradient><linearGradient id="icing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9fc5"/><stop offset="1" stop-color="#f05d9a"/></linearGradient></defs>
-        <path d="M120 20C64 20 20 64 20 120s44 100 100 100 100-44 100-100S176 20 120 20Zm0 65a35 35 0 1 1 0 70 35 35 0 0 1 0-70Z" fill="url(#dough)" fill-rule="evenodd"/>
-        <path d="M120 28c-49 0-88 37-88 83 0 18 7 30 18 29 12-1 11-17 25-16 15 1 12 19 28 18 17-1 14-18 31-17 17 1 16 17 31 15 13-2 11-18 24-18 11 0 15 12 23 8 7-4 10-14 10-25 0-42-39-77-102-77Zm0 57a35 35 0 1 1 0 70 35 35 0 0 1 0-70Z" fill="url(#icing)" fill-rule="evenodd"/>
-        <g fill="#fff4d9"><rect x="67" y="61" width="7" height="15" rx="3" transform="rotate(-32 67 61)"/><rect x="151" y="52" width="7" height="15" rx="3" transform="rotate(38 151 52)"/><rect x="181" y="111" width="7" height="15" rx="3" transform="rotate(65 181 111)"/><rect x="89" y="177" width="7" height="15" rx="3" transform="rotate(18 89 177)"/><rect x="45" y="129" width="7" height="15" rx="3" transform="rotate(-50 45 129)"/><rect x="135" y="188" width="7" height="15" rx="3" transform="rotate(55 135 188)"/></g>
-      </svg>
-      <span class="tap-ripple"></span>
-    </button>
-    <div class="tap-foot"><span>+<b id="tapPower">1</b> за тап</span><span>1 тап = 1 энергия</span></div>
-    <div id="tapFeedback" class="tap-feedback" aria-live="polite"></div>
-  </div>
-  <section class="upgrades">
-    <div class="section-title"><div><p class="eyebrow">РАЗВИВАЙСЯ</p><h2>Улучшения</h2></div><span class="muted">Цены растут с уровнем</span></div>
-    <article class="upgrade-card"><div class="upgrade-icon blue">↗</div><div class="upgrade-info"><b>Сильный тап</b><p>+1 пончик за каждый клик</p><small>Уровень <span id="powerLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="powerCost">120</span></b><button data-upgrade="power">Улучшить</button></div></article>
-    <article class="upgrade-card"><div class="upgrade-icon violet">▤</div><div class="upgrade-info"><b>Запас энергии</b><p>+20 к максимальной энергии</p><small>Уровень <span id="capacityLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="capacityCost">180</span></b><button data-upgrade="capacity">Улучшить</button></div></article>
-    <article class="upgrade-card"><div class="upgrade-icon mint">ϟ</div><div class="upgrade-info"><b>Восстановление</b><p>Энергия восстанавливается быстрее</p><small>Уровень <span id="regenLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="regenCost">240</span></b><button data-upgrade="regen">Улучшить</button></div></article>
-  </section>
-</section>
-<section class="page" id="page-top">
-  <div class="page-heading"><p class="eyebrow">ЛИДЕРЫ ПОНЧИКОВОЙ</p><h1>Таблица топа</h1><p class="sub">Выше тот, у кого больше пончиков на балансе.</p></div>
-  <div class="top-self" id="myRank">Твоё место: —</div>
-  <div class="leaderboard" id="leaderboard"><div class="loading">Загружаем рейтинг…</div></div>
-</section>
-<section class="page" id="page-donuts">
-  <div class="page-heading"><p class="eyebrow">ДРУЗЬЯ = ПОНЧИКИ</p><h1>Пончики за друзей</h1><p class="sub">Пригласи друга в игру и получи награду, когда он прокачается до 3 уровня.</p></div>
-  <div class="referral-card"><div class="referral-art">🍩</div><div class="referral-reward"><strong>+1</strong><span>пончик за друга</span></div><p>Награда начисляется один раз, когда приглашённый друг достигает 3 уровня. Так награды получают реальные активные игроки.</p><div class="referral-code"><small>ТВОЙ КОД</small><b id="referralCode">—</b><button id="copyCode">Копировать</button></div><button class="primary wide" id="inviteButton">Пригласить друга</button><p class="tiny" id="referralStatus">Поделись ссылкой и помоги другу начать игру.</p></div>
-</section>
-<section class="page" id="page-more">
-  <div class="page-heading"><p class="eyebrow">ДОПОЛНИТЕЛЬНО</p><h1>Ещё</h1><p class="sub">Новые возможности скоро появятся.</p></div>
-  <div class="empty-more"><div class="empty-icon">✦</div><b>Пока здесь пусто</b><span>Мы готовим кое-что интересное.</span></div>
-</section>
-</main>
-<footer><span>ПОНЧИК КЛИКЕР</span><span>Играй честно · Расти постепенно</span></footer>
-</div>
+<div class="welcome"><div><p class="eyebrow">ТВОЯ ПОНЧИКОВАЯ</p><h1>Кликай и расти!</h1><p class="sub">50 кликов — новый уровень.</p></div><div class="level-pill">УР. <b id="levelValue">1</b></div></div>
+<div class="wallet-card"><div class="wallet-label">ТВОЙ БАЛАНС</div><div class="wallet-amount"><span class="donut-mini"></span><strong id="balanceValue">0</strong></div><div class="wallet-bottom"><span>Уровень <b id="levelInline">1</b></span><span id="xpLabel">0 / 50 кликов</span></div><div class="xp-track"><i id="xpBar"></i></div></div>
+<div class="energy-row"><div><span class="energy-symbol">⚡</span><b>Энергия</b><strong id="energyValue">100 / 100</strong></div><span id="energyTimer">+1 в секунду</span></div><div class="energy-track"><i id="energyBar"></i></div>
+<div class="tap-area"><div class="tap-hint">НАЖИМАЙ НА ПОНЧИК</div><button class="tap-button" id="tapButton" aria-label="Кликнуть по пончику"><span class="tap-glow"></span><svg class="big-donut" viewBox="0 0 240 240" role="img" aria-label="Пончик"><defs><linearGradient id="dough" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffdca7"/><stop offset="1" stop-color="#d98b4b"/></linearGradient><linearGradient id="icing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9fc5"/><stop offset="1" stop-color="#f05d9a"/></linearGradient></defs><path d="M120 20C64 20 20 64 20 120s44 100 100 100 100-44 100-100S176 20 120 20Zm0 65a35 35 0 1 1 0 70 35 35 0 0 1 0-70Z" fill="url(#dough)" fill-rule="evenodd"/><path d="M120 28c-49 0-88 37-88 83 0 18 7 30 18 29 12-1 11-17 25-16 15 1 12 19 28 18 17-1 14-18 31-17 17 1 16 17 31 15 13-2 11-18 24-18 11 0 15 12 23 8 7-4 10-14 10-25 0-42-39-77-102-77Zm0 57a35 35 0 1 1 0 70 35 35 0 0 1 0-70Z" fill="url(#icing)" fill-rule="evenodd"/><g fill="#fff4d9"><rect x="67" y="61" width="7" height="15" rx="3" transform="rotate(-32 67 61)"/><rect x="151" y="52" width="7" height="15" rx="3" transform="rotate(38 151 52)"/><rect x="181" y="111" width="7" height="15" rx="3" transform="rotate(65 181 111)"/><rect x="89" y="177" width="7" height="15" rx="3" transform="rotate(18 89 177)"/><rect x="45" y="129" width="7" height="15" rx="3" transform="rotate(-50 45 129)"/><rect x="135" y="188" width="7" height="15" rx="3" transform="rotate(55 135 188)"/></g></svg><span class="tap-ripple"></span></button><div class="tap-foot"><span>+<b id="tapPower">1</b> за тап</span><span>1 тап = 1 энергия</span></div><div id="tapFeedback" class="tap-feedback"></div></div>
+<section class="upgrades"><div class="section-title"><div><p class="eyebrow">РАЗВИВАЙСЯ</p><h2>Улучшения</h2></div><span class="muted">Цены постепенно растут</span></div>
+<div id="upgradeList">
+<article class="upgrade-card"><div class="upgrade-icon blue">↗</div><div class="upgrade-info"><b>Сильный тап</b><p>+1 пончик за клик</p><small>Уровень <span id="powerLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="powerCost">120</span></b><button data-upgrade="power">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon violet">▤</div><div class="upgrade-info"><b>Запас энергии</b><p>+20 к максимуму энергии</p><small>Уровень <span id="capacityLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="capacityCost">180</span></b><button data-upgrade="capacity">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon mint">ϟ</div><div class="upgrade-info"><b>Восстановление</b><p>Улучшение запаса энергии</p><small>Уровень <span id="regenLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="regenCost">240</span></b><button data-upgrade="regen">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon violet">✦</div><div class="upgrade-info"><b>Критический клик</b><p>Каждый уровень усиливает доход от клика</p><small>Уровень <span id="criticalLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="criticalCost">420</span></b><button data-upgrade="critical">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon mint">＋</div><div class="upgrade-info"><b>Щедрая глазурь</b><p>Бонус к каждому пятому клику</p><small>Уровень <span id="bonusLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="bonusCost">650</span></b><button data-upgrade="bonus">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon blue">％</div><div class="upgrade-info"><b>Выгодные покупки</b><p>Снижает стоимость следующих улучшений</p><small>Уровень <span id="discountLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="discountCost">900</span></b><button data-upgrade="discount">Улучшить</button></div></article>
+<article class="upgrade-card"><div class="upgrade-icon violet">☘</div><div class="upgrade-info"><b>Удача</b><p>Повышает шанс бонусного клика</p><small>Уровень <span id="fortuneLevel">0</span></small></div><div class="upgrade-buy"><b><span class="donut-mini"></span><span id="fortuneCost">1300</span></b><button data-upgrade="fortune">Улучшить</button></div></article>
+</div></section></section>
+<section class="page" id="page-top"><div class="page-heading"><p class="eyebrow">ЛИДЕРЫ ПОНЧИКОВОЙ</p><h1>Таблица топа</h1><p class="sub">Рейтинг по количеству пончиков.</p></div><div class="top-self" id="myRank">Твоё место: —</div><div class="leaderboard" id="leaderboard"><div class="loading">Загружаем рейтинг…</div></div></section>
+<section class="page" id="page-donuts"><div class="page-heading"><p class="eyebrow">ДРУЗЬЯ = ПОНЧИКИ</p><h1>Пончики за друзей</h1><p class="sub">Пригласи друга и получи награду, когда он достигнет 3 уровня.</p></div><div class="referral-card"><div class="referral-art">🍩</div><div class="referral-reward"><strong>+1</strong><span>пончик за друга</span></div><p>Награда начисляется один раз за активного приглашённого игрока.</p><div class="referral-code"><small>ТВОЙ КОД</small><b id="referralCode">—</b><button id="copyCode">Копировать</button></div><button class="primary wide" id="inviteButton">Пригласить друга</button><p class="tiny" id="referralStatus">Поделись ссылкой и помоги другу начать игру.</p></div></section>
+<section class="page" id="page-more"><div class="page-heading"><p class="eyebrow">ДОПОЛНИТЕЛЬНО</p><h1>Ещё</h1><p class="sub">Инструменты и развлечения.</p></div><div class="more-grid">
+<button class="more-action" data-action="ref">↗<b>Активировать реф-код</b><small>Ввести приглашение друга</small></button><button class="more-action" data-action="promo">％<b>Активировать промо-код</b><small>Получить бонусные пончики</small></button><button class="more-action" data-action="withdraw">◷<b>Когда можно будет вывести?</b><small>Информация о выводе</small></button><button class="more-action" data-action="transfer">⇄<b>Перевести другу</b><small>Отправить пончики игроку</small></button>
+</div><div class="game-entry"><div><p class="eyebrow">МИНИ-ИГРА</p><h2>21 очко</h2><p>Выбери исход, раздай карты и сыграй раунд.</p></div><button class="primary" id="openGame">Играть</button></div><div id="adminEntry" class="admin-entry hidden"><b>Администрирование</b><button class="primary" id="openAdmin">Админ панель</button></div></section>
+<section class="page" id="page-game"><div class="page-heading"><p class="eyebrow">КАРТОЧНЫЙ СТОЛ</p><h1>21 очко</h1><p class="sub">Выбери, кто победит, и попробуй набрать 21.</p></div><div class="game-panel"><div class="game-bet"><label>Ставка в пончиках</label><input id="gameBet" type="number" min="1" value="10"></div><div class="outcome-picker"><button class="outcome selected" data-outcome="player">Победа игрока</button><button class="outcome" data-outcome="dealer">Победа дилера</button><button class="outcome" data-outcome="draw">Ничья</button></div><div class="table-felt"><div class="hand"><span>ДИЛЕР <b id="dealerScore">—</b></span><div class="cards" id="dealerCards"><div class="card-back"></div><div class="card-back"></div></div></div><div class="table-divider">VS</div><div class="hand"><span>ТВОИ КАРТЫ <b id="playerScore">—</b></span><div class="cards" id="playerCards"></div></div><div id="gameResult" class="game-result">Выбери ставку и исход раунда</div></div><div class="game-controls"><button class="primary wide" id="dealGame">Раздать карты</button><button id="hitGame" disabled>Ещё карту</button><button id="standGame" disabled>Хватит</button></div><p class="tiny">При выигрыше выплата — 2× ставка. При проигрыше ставка сгорает.</p></div></section>
+<section class="page" id="page-admin"><div class="page-heading"><p class="eyebrow">ТОЛЬКО ДЛЯ АДМИНИСТРАТОРА</p><h1>Админ панель</h1></div><div class="admin-grid"><button class="more-action" data-admin="broadcast">✉<b>Рассылка</b><small>Сообщение всем игрокам</small></button><button class="more-action" data-admin="promo">％<b>Создать промокод</b><small>Код и размер награды</small></button><button class="more-action" data-admin="give">＋<b>Выдать баланс</b><small>Начислить пончики</small></button><button class="more-action" data-admin="take">−<b>Снять баланс</b><small>Списать пончики</small></button><button class="more-action" data-admin="ban">⛔<b>Заблокировать игрока</b><small>По Telegram username</small></button></div></section>
+</main><footer><span>ПОНЧИК КЛИКЕР</span><span>Играй честно · Расти постепенно</span></footer></div>
 <div class="toast" id="toast"></div>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="/app.js"></script>
-</body></html>
+<div class="modal-backdrop" id="channelModal"><div class="modal-card"><div class="modal-donut">🍩</div><p class="eyebrow">НОВОСТИ И БОНУСЫ</p><h2>Подпишись на канал!</h2><p>Публикуем новости игры, свежие промокоды и специальные бонусы для игроков.</p><a class="primary wide modal-link" href="https://t.me/+cB3iJtgVuoBjZjBi" target="_blank" rel="noopener">Подписаться на канал</a><button class="modal-later" id="channelDone">Я подписался · Продолжить</button></div></div>
+<div class="modal-backdrop" id="actionModal"><div class="modal-card"><button class="modal-close" id="actionClose">×</button><p class="eyebrow" id="actionEyebrow">ДЕЙСТВИЕ</p><h2 id="actionTitle">—</h2><div id="actionFields"></div><button class="primary wide" id="actionSubmit">Подтвердить</button></div></div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script><script src="/app.js"></script></body></html>
