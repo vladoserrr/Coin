@@ -239,22 +239,50 @@ async function publishRoundHash(game,result){
 function play(){
  if(!currentGame)return;
  if(!gameChoice){notify("Сначала выбери исход");return;}
- const input=$("betInput");let bet=Math.floor(Number(input.value));
+ const input=$("betInput");const bet=Math.floor(Number(input.value));
  if(!Number.isFinite(bet)||bet<10){notify("Минимальная ставка — 10 CR");return;}
  if(bet>state.balance){notify("Недостаточно виртуальных кредитов");return;}
- const button=$("playButton");button.disabled=true;button.textContent="РАУНД ИДЁТ…";roundCounter++;
- $("roundHash").textContent="Формируется MD5-хеш…";$("roundNumber").textContent="РАУНД "+String(roundCounter).padStart(4,"0");
- $("resultNote").className="result-note";$("resultNote").textContent="Запускаем игровую механику…";
- const res=choiceOutcome(currentGame.id,gameChoice);
- animateRound(currentGame.id,async()=>{
-  const payout=Math.floor(bet*res.mult),delta=payout-bet;
-  state.balance+=delta;state.played++;if(delta>0)state.wins++;
-  const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;
-  state.history.unshift({game:currentGame.name,delta,at:Date.now(),result:res.label});state.history=state.history.slice(0,30);save();updateStats();await syncScore(points,delta>0);renderBoard("previewBoard",5);renderBoard("fullBoard",20);
-  const note=$("resultNote");note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");note.className="result-note "+(delta>0?"win":delta<0?"lose":"");
-  await publishRoundHash(currentGame.name,res.label);
-  button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
- });
+ const button=$("playButton");
+ if(button.disabled)return;
+ button.disabled=true;button.textContent="РАУНД ИДЁТ…";roundCounter++;
+ $("roundHash").textContent="Формируется MD5-хеш…";
+ $("roundNumber").textContent="РАУНД "+String(roundCounter).padStart(4,"0");
+ $("resultNote").className="result-note";
+ $("resultNote").textContent="Запускаем игровой раунд…";
+ let res;
+ try{res=choiceOutcome(currentGame.id,gameChoice);}
+ catch(error){console.error("Coin round result error:",error);$("resultNote").textContent="Не удалось рассчитать исход: "+error.message;button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';return;}
+ let settled=false;
+ const settle=()=>{
+  if(settled)return;settled=true;
+  try{
+   const payout=Math.floor(bet*res.mult),delta=payout-bet;
+   state.balance+=delta;state.played++;if(delta>0)state.wins++;
+   const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;
+   state.history.unshift({game:currentGame.name,delta,at:Date.now(),result:res.label});
+   state.history=state.history.slice(0,30);save();updateStats();
+   const note=$("resultNote");
+   note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");
+   note.className="result-note "+(delta>0?"win":delta<0?"lose":"");
+   button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
+   try{renderBoard("previewBoard",5);renderBoard("fullBoard",20);}catch(e){console.warn("Coin board render:",e);}
+   Promise.resolve(syncScore(points,delta>0)).catch(e=>console.warn("Coin score sync:",e));
+   Promise.resolve(publishRoundHash(currentGame.name,res.label)).catch(e=>console.warn("Coin hash:",e));
+  }catch(error){
+   console.error("Coin settle error:",error);
+   $("resultNote").textContent="Раунд завершён, но обновление баланса вызвало ошибку: "+error.message;
+   button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
+  }
+ };
+ try{
+  animateRound(currentGame.id,settle,res);
+  setTimeout(settle,3500);
+ }catch(error){
+  console.error("Coin animation error:",error);
+  $("displayCaption").textContent="РЕЗУЛЬТАТ РАУНДА";
+  $("displayResult").textContent=res.label;
+  settle();
+ }
 }
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>b.dataset.page==="leaderboard"?showLeaderboard():showCasino()));
 document.querySelectorAll("[data-bottom]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.bottom==="casino")showCasino();else if(b.dataset.bottom==="leaderboard")showLeaderboard();else if(b.dataset.bottom==="transfer")showTransfer();else if(b.dataset.bottom==="more")showMore();}));
