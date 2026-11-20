@@ -1,0 +1,12 @@
+{
+  "name": "coin-casino",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Coin — social arcade casino with virtual credits",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
