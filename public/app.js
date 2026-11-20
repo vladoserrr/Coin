@@ -196,7 +196,7 @@ function renderGameOptions(){
 function visualMarkup(id,r={},rolling=false){
  if(id==="dice")return '<div class="dice-scene '+(rolling?'rolling':'')+'"><div class="die"><b>'+(r.d1||"")+'</b></div><div class="die"><b>'+(r.d2||"")+'</b></div></div>';
  if(id==="coin")return '<div class="coin-scene '+(rolling?'rolling':'')+'"><div class="coin-disc">'+(r.side==="heads"?"О":"Р")+'</div></div>';
- if(id==="roulette"||id==="wheel"){const roulette=id==="roulette";const nums=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];const reds=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];const count=roulette?37:8;const labels=roulette?nums:["×1.5","×2","×0.5","×5","×0","×1","×3","×0"];const spans=labels.map((v,i)=>{const col=roulette?(i===0?"#16865f":reds.includes(v)?"#bd3448":"#182c50"):["#245b91","#b72f43","#245b91","#d5a64e","#b72f43","#245b91","#b72f43","#d5a64e"][i];return '<span style="--i:'+i+';--sector:'+col+'">'+v+'</span>';}).join("");const idx=Number.isInteger(r.index)?r.index:0;const angle=r.landingAngle??(360-((idx+.5)*360/count));const labelRadius=roulette? -68:-64;const gradient=roulette?"conic-gradient("+nums.map((n,i)=>{const c=i===0?"#16865f":reds.includes(n)?"#bd3448":"#182c50";return c+" "+(i*360/count)+"deg "+((i+1)*360/count)+"deg";}).join(",")+")":"";return '<div class="wheel-scene '+(rolling?"rolling":"")+'"><div class="wheel-pointer"></div><div class="wheel-disc '+(roulette?"roulette-disc":"prize-disc")+(rolling?"":" landed")+'" style="--landing-angle:'+angle+'deg;--sector-count:'+count+';--label-radius:'+labelRadius+'px'+(roulette?';background:'+gradient:'')+'"><div class="wheel-labels">'+spans+'</div><b>'+(roulette?"ROULETTE":"COIN")+'</b></div></div>';}
+ if(id==="roulette"||id==="wheel"){const roulette=id==="roulette";const nums=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];const reds=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];const count=roulette?37:8;const labels=roulette?nums:["×1.5","×2","×0.5","×5","×0","×1","×3","×0"];const spans=labels.map((v,i)=>{const col=roulette?(i===0?"#16865f":reds.includes(v)?"#bd3448":"#182c50"):["#245b91","#b72f43","#245b91","#d5a64e","#b72f43","#245b91","#b72f43","#d5a64e"][i];return '<span style="--i:'+i+';--sector:'+col+'">'+v+'</span>';}).join("");const idx=Number.isInteger(r.index)?r.index:0;const angle=r.landingAngle??(360-((idx+.5)*360/count));const labelRadius=roulette? -56:-61;const gradient=roulette?"conic-gradient("+nums.map((n,i)=>{const c=i===0?"#16865f":reds.includes(n)?"#bd3448":"#182c50";return c+" "+(i*360/count)+"deg "+((i+1)*360/count)+"deg";}).join(",")+")":"";return '<div class="wheel-scene '+(rolling?"rolling":"")+'"><div class="wheel-pointer"></div><div class="wheel-disc '+(roulette?"roulette-disc":"prize-disc")+(rolling?"":" landed")+'" style="--landing-angle:'+angle+'deg;--sector-count:'+count+';--label-radius:'+labelRadius+'px'+(roulette?';background:'+gradient:'')+'"><div class="wheel-labels">'+spans+'</div><b>'+(roulette?"ROULETTE":"COIN")+'</b></div></div>';}
  if(id==="slots")return '<div class="slot-machine '+(rolling?'rolling':'')+'"><div class="slot-reel">'+(r.symbols?.[0]||"7")+'</div><div class="slot-reel">'+(r.symbols?.[1]||"◆")+'</div><div class="slot-reel">'+(r.symbols?.[2]||"●")+'</div></div>';
  if(id==="plinko")return '<div class="plinko-board '+(rolling?'rolling':'')+'"><div class="plinko-ball"></div><div class="plinko-pegs">'+Array.from({length:6},(_,i)=>'<span>'+Array.from({length:i+3},()=>'<i></i>').join("")+'</span>').join("")+'</div><div class="plinko-bins"><i>0.2</i><i>0.5</i><i>1</i><i>2</i><i>3</i></div></div>';
  if(id==="mines"||id==="towers")return '<div class="tile-board">'+Array.from({length:id==="mines"?9:4},(_,i)=>'<span class="'+(r.safeIndex===i?(r.safe?"safe":"danger"):"")+'">'+(r.safeIndex===i?(r.safe?"✓":"×"):"")+'</span>').join("")+'</div>';
@@ -232,11 +232,22 @@ const ROUND_FRAMES={
 };
 
 function animateRound(id,done,result){
- clearGameAnimation();const token=animationToken,stage=$("gameDisplay");
+ clearGameAnimation();
+ const token=animationToken,stage=$("gameDisplay");
  stage.innerHTML='<div class="display-orbit"></div><div class="display-caption" id="displayCaption">ПОДГОТОВКА РАУНДА</div><div id="visualHost">'+visualMarkup(id,result,true)+'</div><div class="display-result" id="displayResult">…</div>';
- let i=0;const frames=12;$("displayCaption").textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · АНИМАЦИЯ";
- const tick=()=>{if(token!==animationToken)return;if(i<frames){const host=$("visualHost");if(host){host.innerHTML=visualMarkup(id,result,true);host.querySelectorAll(".die b").forEach(x=>x.textContent=randomInt(1,6));host.querySelectorAll(".slot-reel").forEach(x=>x.textContent=["7","◆","●","★","BAR"][randomInt(0,4)]);}const d=$("displayResult");if(d)d.textContent=["ПОДГОТОВКА","РАЗДАЧА","РАЗДАЧА","ВРАЩЕНИЕ","ВРАЩЕНИЕ","БРОСОК","РАУНД","РАУНД","РАУНД","ФИНИШ","ФИНИШ",""][i];i++;animationTimers.push(setTimeout(tick,170));}else{const host=$("visualHost");if(host)host.innerHTML=visualMarkup(id,result,false);$("displayCaption").textContent=result.caption;$("displayResult").textContent=result.label;done();}};
- tick();
+ const durations={roulette:3400,wheel:3400,slots:3000,plinko:2700,dice:2500,coin:2500,mines:2300,hilo:2300,blackjack:2300,baccarat:2300,keno:2400,crash:2700,limbo:2600,towers:2300};
+ const duration=durations[id]||2400;
+ $("displayCaption").textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · ИГРА ИДЁТ";
+ $("displayResult").textContent="…";
+ animationTimers.push(setTimeout(()=>{
+  if(token!==animationToken)return;
+  const host=$("visualHost");
+  if(host)host.innerHTML=visualMarkup(id,result,false);
+  $("displayCaption").textContent=result.caption;
+  $("displayResult").textContent=result.label;
+  animationTimers=[];
+  done();
+ },duration));
 }
 async function publishRoundHash(game,result){
  try{const r=await fetch("/api/round-hash",{method:"POST",headers:apiHeaders(),body:JSON.stringify({game,result})});if(!r.ok)throw new Error("hash unavailable");const d=await r.json();$("roundHash").textContent=d.hash;$("roundNumber").textContent="РАУНД "+String(roundCounter).padStart(4,"0");}
