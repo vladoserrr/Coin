@@ -56,7 +56,7 @@ async function initTelegram(){
    telegramUser=d.user||telegramUser;isCoinAdmin=!!d.admin;
    state.nickname=d.player.nickname||state.nickname;state.balance=Number(d.player.balance??state.balance);
    state.telegramUsername=d.player.username||"";state.telegramPhoto=d.player.photoUrl||"";
-   save();updateStats();if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
+   save();updateStats();if(state.telegramPhoto){const avatar=document.getElementById("profileOpen");avatar.innerHTML='<img src="'+escapeHtml(state.telegramPhoto)+'" alt="" referrerpolicy="no-referrer">';}if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
   }
  }catch(e){console.warn("Coin Telegram auth:",e.message);}
 }
@@ -86,7 +86,7 @@ async function refreshBoard(period=activePeriod){
   const response=await fetch("/api/leaderboard?period="+encodeURIComponent(period),{cache:"no-store"});
   if(!response.ok)throw new Error("leaderboard unavailable");
   const data=await response.json();remotePlayers=data.players||[];
-  updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+  updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",100);
  }catch(error){console.warn("Coin leaderboard:",error.message);}
 }
 async function syncPlayer(){
@@ -178,11 +178,11 @@ function outcome(id){
 }
 
 const ROUND_FRAMES={
- dice:["⚄","⚂","⚅","⚀","…"],coin:["ОРЁЛ","РЕШКА","ОРЁЛ","РЕШКА","…"],roulette:["●","◉","◌","◉","…"],mines:["□ □ □","■ □ □","■ ■ □","■ ■ ■","…"],slots:["7 ◆ ●","◆ 7 ◇","● ● 7","✦ 7 ✦","…"],plinko:["●","●","●","●","…"],wheel:["×0.5","×1.2","×2","×0.8","…"],hilo:["2 → ?","? → 9","? → 6","? → 12","…"],blackjack:["♠ 8","♠ 14","♠ 18","♠ 20","…"],baccarat:["ИГРОК 2","БАНК 5","ИГРОК 7","БАНК 6","…"],keno:["04 · 11 · 19","08 · 14 · 23","03 · 17 · 31","06 · 22 · 35","…"],crash:["×1.02","×1.18","×1.43","×1.86","…"],limbo:["×0.8","×1.4","×1.9","×2.3","…"],towers:["ЭТАЖ 01","ЭТАЖ 02","ЭТАЖ 03","ЭТАЖ 04","…"]
+ dice:["◆","◈","●","◇","…"],coin:["ОРЁЛ","РЕШКА","ОРЁЛ","РЕШКА","…"],roulette:["●","◉","◌","◉","…"],mines:["□ □ □","■ □ □","■ ■ □","■ ■ ■","…"],slots:["7 ◆ ●","◆ 7 ◇","● ● 7","✦ 7 ✦","…"],plinko:["●","●","●","●","…"],wheel:["×0.5","×1.2","×2","×0.8","…"],hilo:["2 → ?","? → 9","? → 6","? → 12","…"],blackjack:["♠ 8","♠ 14","♠ 18","♠ 20","…"],baccarat:["ИГРОК 2","БАНК 5","ИГРОК 7","БАНК 6","…"],keno:["04 · 11 · 19","08 · 14 · 23","03 · 17 · 31","06 · 22 · 35","…"],crash:["×1.02","×1.18","×1.43","×1.86","…"],limbo:["×0.8","×1.4","×1.9","×2.3","…"],towers:["ЭТАЖ 01","ЭТАЖ 02","ЭТАЖ 03","ЭТАЖ 04","…"]
 };
 function animateRound(id,done){
  const display=$("displayResult"),caption=$("displayCaption"),frames=ROUND_FRAMES[id]||["…","…","…"],stage=$("gameDisplay");
- stage.classList.remove("round-active");void stage.offsetWidth;stage.classList.add("round-"+id,"round-active");
+ ["dice","coin","roulette","mines","slots","plinko","wheel","hilo","blackjack","baccarat","keno","crash","limbo","towers"].forEach(k=>stage.classList.remove("round-"+k));stage.classList.remove("round-active");void stage.offsetWidth;stage.classList.add("round-"+id,"round-active");
  let i=0;caption.textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · ИДЁТ ИГРА";
  const tick=()=>{if(i<frames.length){display.textContent=frames[i];display.classList.remove("round-pop");void display.offsetWidth;display.classList.add("round-pop");i++;setTimeout(tick,145);}else{stage.classList.remove("round-active");done();}};
  tick();
