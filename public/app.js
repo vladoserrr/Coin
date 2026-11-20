@@ -43,6 +43,9 @@ let telegramInitData = window.Telegram?.WebApp?.initData || "";
 let telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
 let isCoinAdmin = false;
 let roundCounter = 0;
+let animationTimers = [];
+let animationToken = 0;
+function clearGameAnimation(){animationToken++;animationTimers.forEach(clearTimeout);animationTimers=[];}
 function apiHeaders(){return {"Content-Type":"application/json",...(telegramInitData?{"X-Telegram-Init-Data":telegramInitData}:{})};}
 async function initTelegram(){
  const tg=window.Telegram?.WebApp;
@@ -132,6 +135,8 @@ function renderGames(){
  document.querySelectorAll("[data-game]").forEach(el=>el.addEventListener("click",()=>openGame(el.dataset.game)));
 }
 function openGame(id){
+ clearGameAnimation();
+ const playBtn=$("playButton");if(playBtn){playBtn.disabled=false;playBtn.innerHTML='ИГРАТЬ <span>→</span>';}
  document.querySelector(".hero").classList.add("hidden");document.querySelector(".stats-row").classList.add("hidden");
  currentGame=GAMES.find(g=>g.id===id);if(!currentGame)return;gameChoice="";renderGameOptions();
  $("stageIcon").innerHTML=svgIcon(currentGame.id);$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
@@ -188,7 +193,7 @@ function renderGameOptions(){
 function visualMarkup(id,r={},rolling=false){
  if(id==="dice")return '<div class="dice-scene '+(rolling?'rolling':'')+'"><div class="die"><b>'+(r.d1||"")+'</b></div><div class="die"><b>'+(r.d2||"")+'</b></div></div>';
  if(id==="coin")return '<div class="coin-scene '+(rolling?'rolling':'')+'"><div class="coin-disc">'+(r.side==="heads"?"О":"Р")+'</div></div>';
- if(id==="roulette"||id==="wheel")return '<div class="wheel-scene '+(rolling?'rolling':'')+'"><div class="wheel-pointer"></div><div class="wheel-disc '+(id==="roulette"?"roulette-disc":"prize-disc")+'"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><b>'+(id==="roulette"?"ROULETTE":"COIN")+'</b></div></div>';
+ if(id==="roulette"||id==="wheel"){const roulette=id==="roulette";const nums=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];const reds=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];const count=roulette?37:8;const labels=roulette?nums:["×1.5","×2","×0.5","×5","×0","×1","×3","×0"];const spans=labels.map((v,i)=>{const col=roulette?(i===0?"#16865f":reds.includes(v)?"#bd3448":"#182c50"):["#245b91","#b72f43","#245b91","#d5a64e","#b72f43","#245b91","#b72f43","#d5a64e"][i];return '<span style="--i:'+i+';--sector:'+col+'">'+v+'</span>';}).join("");const idx=Number.isInteger(r.index)?r.index:0;const angle=r.landingAngle??(360-((idx+.5)*360/count));return '<div class="wheel-scene '+(rolling?"rolling":"")+'"><div class="wheel-pointer"></div><div class="wheel-disc '+(roulette?"roulette-disc":"prize-disc")+(rolling?"":" landed")+'" style="--landing-angle:'+angle+'deg;--sector-count:'+count+'"><div class="wheel-labels">'+spans+'</div><b>'+(roulette?"ROULETTE":"COIN")+'</b></div></div>';}
  if(id==="slots")return '<div class="slot-machine '+(rolling?'rolling':'')+'"><div class="slot-reel">'+(r.symbols?.[0]||"7")+'</div><div class="slot-reel">'+(r.symbols?.[1]||"◆")+'</div><div class="slot-reel">'+(r.symbols?.[2]||"●")+'</div></div>';
  if(id==="plinko")return '<div class="plinko-board '+(rolling?'rolling':'')+'"><div class="plinko-ball"></div><div class="plinko-pegs">'+Array.from({length:6},(_,i)=>'<span>'+Array.from({length:i+3},()=>'<i></i>').join("")+'</span>').join("")+'</div><div class="plinko-bins"><i>0.2</i><i>0.5</i><i>1</i><i>2</i><i>3</i></div></div>';
  if(id==="mines"||id==="towers")return '<div class="tile-board">'+Array.from({length:id==="mines"?9:4},(_,i)=>'<span class="'+(r.safeIndex===i?(r.safe?"safe":"danger"):"")+'">'+(r.safeIndex===i?(r.safe?"✓":"×"):"")+'</span>').join("")+'</div>';
@@ -203,11 +208,11 @@ function choiceOutcome(id,choice){
  switch(id){
  case "dice":{const d1=ri(1,6),d2=ri(1,6),n=d1+d2,win=choice==="low"?n<=6:choice==="seven"?n===7:choice==="high"?n>=8:choice==="even"?n%2===0:n%2===1;const odds={low:1.65,seven:5,high:1.65,even:1.85,odd:1.85};return {label:n+" · "+d1+"+"+d2,caption:"СУММА НА КОСТЯХ",mult:win?odds[choice]:0,detail:"Выпало "+n+". "+(win?"Прогноз совпал!":"Прогноз не совпал."),d1,d2};}
  case "coin":{const side=Math.random()<.5?"heads":"tails",win=side===choice;return {label:side==="heads"?"ОРЁЛ":"РЕШКА",caption:"БРОСОК МОНЕТЫ",mult:win?1.9:0,detail:win?"Ты угадал сторону монеты.":"Выпала другая сторона.",side};}
- case "roulette":{const n=ri(0,36),red=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n),color=n===0?"green":red?"red":"black",win=color===choice;return {label:String(n),caption:color==="green"?"ЗЕЛЁНОЕ ЗЕРО":color==="red"?"КРАСНОЕ":"ЧЁРНОЕ",mult:win?(choice==="green"?30:1.9):0,detail:"Шар остановился на "+n+". "+(win?"Твой сектор!":"Ставка не сыграла."),number:n,color};}
+ case "roulette":{const wheel=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26],n=ri(0,36),index=wheel.indexOf(n),red=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n),color=n===0?"green":red?"red":"black",win=color===choice;return {label:String(n),caption:color==="green"?"ЗЕЛЁНОЕ ЗЕРО":color==="red"?"КРАСНОЕ":"ЧЁРНОЕ",mult:win?(choice==="green"?30:1.9):0,detail:"Шар остановился на "+n+". "+(win?"Твой сектор!":"Ставка не сыграла."),number:n,color,index,landingAngle:360-((index+.5)*(360/37))};}
  case "mines":{const mines=Number(choice.slice(4)),safe=Math.random()<1-mines/9;return {label:safe?"БЕЗОПАСНО":"МИНА",caption:mines+" МИН · ПОЛЕ 3×3",mult:safe?({1:1.12,3:1.48,5:2.1}[mines]):0,detail:safe?"Ячейка открыта.":"Попалась мина.",safeIndex:ri(0,8),safe};}
  case "slots":{const symbols=["7","◆","●","★","BAR","♦"],a=symbols[ri(0,5)],b=symbols[ri(0,5)],c=symbols[ri(0,5)],triple=a===b&&b===c,pair=a===b||b===c||a===c,eligible=choice==="any"?(triple||pair):triple&&(choice==="seven"?a==="7":a==="BAR"),m=eligible?(triple?(a==="7"?8:a==="BAR"?5:4):1.4):0;return {label:a+"  "+b+"  "+c,caption:"ТРИ БАРАБАНА",mult:m,detail:eligible?(triple?"Джекпот! Три одинаковых символа.":"Два символа совпали."):"Выбранная комбинация не собрана.",symbols:[a,b,c]};}
  case "plinko":{const sets={low:[.4,.5,.7,.8,1,1,1.2],medium:[0,.2,.4,.5,.8,1.5,3],high:[0,0,.1,.2,.5,1.5,4]},arr=sets[choice],m=arr[ri(0,arr.length-1)];return {label:"×"+m,caption:"ШАР ДОСТИГ НИЖНЕГО СЕКТОРА",mult:m,detail:"Шар прошёл через пегборд и попал в сектор ×"+m};}
- case "wheel":{const sectors=[{c:"blue",m:1.5},{c:"red",m:2},{c:"blue",m:.5},{c:"gold",m:5},{c:"red",m:0},{c:"blue",m:1},{c:"red",m:3},{c:"gold",m:0}],s=sectors[ri(0,7)],win=s.c===choice;return {label:"×"+s.m,caption:s.c.toUpperCase()+" СЕКТОР",mult:win?s.m:0,detail:"Колесо остановилось на секторе "+s.c+". "+(win?"Цвет совпал!":"Цвет не совпал."),color:s.c};}
+ case "wheel":{const sectors=[{c:"blue",m:1.5},{c:"red",m:2},{c:"blue",m:.5},{c:"gold",m:5},{c:"red",m:0},{c:"blue",m:1},{c:"red",m:3},{c:"gold",m:0}],index=ri(0,7),s=sectors[index],win=s.c===choice;return {label:"×"+s.m,caption:s.c.toUpperCase()+" СЕКТОР",mult:win?s.m:0,detail:"Колесо остановилось на секторе "+s.c+". "+(win?"Цвет совпал!":"Цвет не совпал."),color:s.c,index,landingAngle:360-((index+.5)*45)};}
  case "hilo":{const a=ri(2,14),b=ri(2,14),win=choice==="higher"?b>a:b<a;return {label:a+" → "+b,caption:"СЛЕДУЮЩАЯ КАРТА",mult:win?1.85:0,detail:"Первая карта "+a+", следующая "+b+". "+(win?"Ты угадал направление.":"Направление не угадано."),cardA:a,cardB:b};}
  case "blackjack":{let p=ri(10,20),d=ri(12,21);if(choice==="hit")p+=ri(2,10);const win=p<=21&&(d>21||p>d),push=p===d;return {label:p+" : "+d,caption:"ИГРОК / ДИЛЕР",mult:push?1:win?1.95:0,detail:push?"Ничья — возврат ставки.":win?"Ты победил дилера.":"Дилер выиграл.",cardA:p,cardB:d};}
  case "baccarat":{const p=ri(0,9),b=ri(0,9),winner=p===b?"tie":p>b?"player":"banker",win=choice===winner;return {label:p+" : "+b,caption:"ИГРОК / БАНК",mult:win?(winner==="tie"?8:winner==="banker"?1.9:2):0,detail:"Результат: "+(winner==="tie"?"ничья":winner==="player"?"игрок":"банк")+". "+(win?"Ставка сыграла.":"Не угадано."),cardA:p,cardB:b};}
@@ -224,11 +229,10 @@ const ROUND_FRAMES={
 };
 
 function animateRound(id,done,result){
- const stage=$("gameDisplay");
+ clearGameAnimation();const token=animationToken,stage=$("gameDisplay");
  stage.innerHTML='<div class="display-orbit"></div><div class="display-caption" id="displayCaption">ПОДГОТОВКА РАУНДА</div><div id="visualHost">'+visualMarkup(id,result,true)+'</div><div class="display-result" id="displayResult">…</div>';
- let i=0;const frames=12;
- $("displayCaption").textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · АНИМАЦИЯ";
- const tick=()=>{if(i<frames){const host=$("visualHost");if(host){host.innerHTML=visualMarkup(id,result,true);host.querySelectorAll(".die b").forEach(x=>x.textContent=randomInt(1,6));host.querySelectorAll(".slot-reel").forEach(x=>x.textContent=["7","◆","●","★","BAR"][randomInt(0,4)]);}const d=$("displayResult");if(d)d.textContent=["ПОДГОТОВКА","РАЗДАЧА","РАЗДАЧА","ВРАЩЕНИЕ","ВРАЩЕНИЕ","БРОСОК","РАУНД","РАУНД","РАУНД","ФИНИШ","ФИНИШ",""][i];i++;setTimeout(tick,170);}else{const host=$("visualHost");if(host)host.innerHTML=visualMarkup(id,result,false);$("displayCaption").textContent=result.caption;$("displayResult").textContent=result.label;done();}};
+ let i=0;const frames=12;$("displayCaption").textContent="РАУНД "+String(roundCounter).padStart(4,"0")+" · АНИМАЦИЯ";
+ const tick=()=>{if(token!==animationToken)return;if(i<frames){const host=$("visualHost");if(host){host.innerHTML=visualMarkup(id,result,true);host.querySelectorAll(".die b").forEach(x=>x.textContent=randomInt(1,6));host.querySelectorAll(".slot-reel").forEach(x=>x.textContent=["7","◆","●","★","BAR"][randomInt(0,4)]);}const d=$("displayResult");if(d)d.textContent=["ПОДГОТОВКА","РАЗДАЧА","РАЗДАЧА","ВРАЩЕНИЕ","ВРАЩЕНИЕ","БРОСОК","РАУНД","РАУНД","РАУНД","ФИНИШ","ФИНИШ",""][i];i++;animationTimers.push(setTimeout(tick,170));}else{const host=$("visualHost");if(host)host.innerHTML=visualMarkup(id,result,false);$("displayCaption").textContent=result.caption;$("displayResult").textContent=result.label;done();}};
  tick();
 }
 async function publishRoundHash(game,result){
@@ -238,6 +242,7 @@ async function publishRoundHash(game,result){
 
 function play(){
  if(!currentGame)return;
+ const playedGame=currentGame;
  if(!gameChoice){notify("Сначала выбери исход");return;}
  const input=$("betInput");const bet=Math.floor(Number(input.value));
  if(!Number.isFinite(bet)||bet<10){notify("Минимальная ставка — 10 CR");return;}
@@ -259,7 +264,7 @@ function play(){
    const payout=Math.floor(bet*res.mult),delta=payout-bet;
    state.balance+=delta;state.played++;if(delta>0)state.wins++;
    const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;
-   state.history.unshift({game:currentGame.name,delta,at:Date.now(),result:res.label});
+   state.history.unshift({game:playedGame.name,delta,at:Date.now(),result:res.label});
    state.history=state.history.slice(0,30);save();updateStats();
    const note=$("resultNote");
    note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");
@@ -267,7 +272,7 @@ function play(){
    button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
    try{renderBoard("previewBoard",5);renderBoard("fullBoard",20);}catch(e){console.warn("Coin board render:",e);}
    Promise.resolve(syncScore(points,delta>0)).catch(e=>console.warn("Coin score sync:",e));
-   Promise.resolve(publishRoundHash(currentGame.name,res.label)).catch(e=>console.warn("Coin hash:",e));
+   Promise.resolve(publishRoundHash(playedGame.name,res.label)).catch(e=>console.warn("Coin hash:",e));
   }catch(error){
    console.error("Coin settle error:",error);
    $("resultNote").textContent="Раунд завершён, но обновление баланса вызвало ошибку: "+error.message;
@@ -275,7 +280,7 @@ function play(){
   }
  };
  try{
-  animateRound(currentGame.id,settle,res);
+  animateRound(playedGame.id,settle,res);
   setTimeout(settle,3500);
  }catch(error){
   console.error("Coin animation error:",error);
@@ -290,6 +295,9 @@ $("bottomProfile").addEventListener("click",()=>{$("nicknameInput").value=state.
 $("sendTransfer").addEventListener("click",async()=>{const username=$("transferUsername").value.trim().replace(/^@/,""),amount=Math.floor(Number($("transferAmount").value));if(!username||!amount||amount<1){notify("Укажи username и сумму перевода");return;}const b=$("sendTransfer");b.disabled=true;try{const r=await fetch("/api/transfer",{method:"POST",headers:apiHeaders(),body:JSON.stringify({username,amount})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Перевод не выполнен");state.balance=d.balance;save();updateStats();await syncPlayer();$("transferAmount").value="";notify("Переведено "+fmt(amount)+" CR игроку "+d.recipient);}catch(e){notify(e.message);}finally{b.disabled=false;}});
 $("openAdmin").addEventListener("click",()=>{if(!isCoinAdmin)return notify("Нет доступа");$("adminPanel").classList.remove("hidden");});
 $("closeAdmin").addEventListener("click",()=>$("adminPanel").classList.add("hidden"));
+async function redeemPromo(){const code=$("promoCodeInput").value.trim().toUpperCase();if(!code)return notify("Введи промокод");const status=$("promoStatus");status.textContent="Проверяем код…";$("redeemPromo").disabled=true;try{const r=await fetch("/api/promo/redeem",{method:"POST",headers:apiHeaders(),body:JSON.stringify({code,playerId})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Не удалось активировать код");state.balance=Number(d.balance??(state.balance+d.reward));save();updateStats();status.textContent="Промокод активирован: +"+fmt(d.reward)+" CR";$("promoCodeInput").value="";notify("Начислено "+fmt(d.reward)+" CR");}catch(e){status.textContent=e.message;notify(e.message);}finally{$("redeemPromo").disabled=false;}}
+$("redeemPromo").addEventListener("click",redeemPromo);$("promoCodeInput").addEventListener("keydown",e=>{if(e.key==="Enter")redeemPromo();});
+$("createPromo").addEventListener("click",async()=>{if(!isCoinAdmin)return notify("Нет доступа");const code=$("adminPromoCode").value.trim().toUpperCase(),reward=Number($("adminPromoReward").value),maxUses=Number($("adminPromoLimit").value),status=$("adminPromoStatus");status.textContent="Создаём…";$("createPromo").disabled=true;try{const r=await fetch("/api/admin/promos",{method:"POST",headers:apiHeaders(),body:JSON.stringify({code,reward,maxUses})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Не удалось создать код");status.textContent="Промокод "+d.promo.code+" создан · "+fmt(d.promo.reward)+" CR · лимит: "+(d.promo.maxUses||"без ограничений");$("adminPromoCode").value="";notify("Промокод создан");}catch(e){status.textContent=e.message;notify(e.message);}finally{$("createPromo").disabled=false;}});
 async function sendBroadcast(mode){if(!isCoinAdmin)return notify("Нет доступа");const message=$("broadcastText").value.trim();if(!message)return notify("Введи текст рассылки");if(mode==="all"&&!confirm("Отправить сообщение всем игрокам Coin?"))return;const status=$("broadcastStatus");status.textContent="Отправка…";try{const r=await fetch("/api/admin/broadcast",{method:"POST",headers:apiHeaders(),body:JSON.stringify({message,mode})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Ошибка рассылки");status.textContent="Отправлено: "+d.sent+" · Не доставлено: "+d.failed;notify("Рассылка завершена");}catch(e){status.textContent=e.message;notify(e.message);}}
 $("sendSelf").addEventListener("click",()=>sendBroadcast("self"));$("sendAll").addEventListener("click",()=>sendBroadcast("all"));
 
