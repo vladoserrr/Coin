@@ -139,3 +139,9 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
 .btn-ghost{background:#ffffff0c;border:1px solid #ffffff24;color:#e8eef7}
 @keyframes screenIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:620px){.more-page{padding-top:24px}.more-grid{gap:10px}.more-card{padding:17px;min-height:166px}.more-card h3{font-size:14px}.more-card p{font-size:10px}.admin-entry{align-items:flex-start;flex-direction:column}.admin-entry .btn{width:100%}.admin-panel{padding:17px}.broadcast-actions{flex-direction:column}.broadcast-actions .btn{width:100%}.round-proof{padding:12px}.round-proof code{font-size:9px}.bottom-nav{width:calc(100% - 14px);padding:6px;gap:2px}.bottom-nav-item{font-size:8px;padding:7px 1px}.bottom-nav-icon svg{width:18px;height:18px}}
+
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-avatar{overflow:hidden}
+.player-photo{border:1px solid #ffffff22}
+.leaderboard-page .leaderboard-card{max-height:72vh;overflow:auto}
+.transfer-form .btn{margin-top:10px}
