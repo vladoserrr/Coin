@@ -53,7 +53,7 @@ async function initTelegram(){
   if(!r.ok)throw new Error("Telegram auth failed");
   const d=await r.json();
   if(d.telegramEnabled&&d.player){
-   telegramUser=d.user||telegramUser;isCoinAdmin=!!d.admin;
+   telegramUser=d.user||telegramUser;playerId=d.player.id||playerId;isCoinAdmin=!!d.admin;
    state.nickname=d.player.nickname||state.nickname;state.balance=Number(d.player.balance??state.balance);
    state.telegramUsername=d.player.username||"";state.telegramPhoto=d.player.photoUrl||"";
    save();updateStats();if(state.telegramPhoto){const avatar=document.getElementById("profileOpen");avatar.innerHTML='<img src="'+escapeHtml(state.telegramPhoto)+'" alt="" referrerpolicy="no-referrer">';}if(isCoinAdmin)document.getElementById("adminEntry")?.classList.remove("hidden");
