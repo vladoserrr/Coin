@@ -103,8 +103,8 @@ async function syncScore(points,won){
 }
 function renderBoard(target,limit){
  const board=buildBoard().slice(0,limit);
- const head='<div class="leader-row leader-head"><span>МЕСТО</span><span>ИГРОК</span><span class="leader-games">СЫГРАНО</span><span style="text-align:right">ОЧКИ</span></div>';
- const rows=board.map((p,i)=>'<div class="leader-row"><span class="rank '+(i<3?'r'+(i+1):'')+'">'+String(i+1).padStart(2,"0")+'</span><span class="player-cell"><span class="player-avatar">'+escapeHtml(p.initial)+'</span><span>'+escapeHtml(p.name)+(p.me?'<small>ТВОЙ ПРОФИЛЬ</small>':(remotePlayers.length?'<small>УЧАСТНИК СЕЗОНА</small>':'<small>ДЕМО-ИГРОК</small>'))+'</span></span><span class="score-cell leader-games">'+fmt(p.games)+'<small>ИГР</small></span><span class="score-cell">'+fmt(p.score)+'<small>ОЧКОВ</small></span></div>').join("");
+ const head='<div class="leader-row leader-head"><span>МЕСТО</span><span>УЧАСТНИК</span><span class="leader-games">СЫГРАНО</span><span style="text-align:right">ОЧКИ</span></div>';
+ const rows=board.map((p,i)=>'<div class="leader-row player-row"><span class="rank '+(i<3?'r'+(i+1):'')+'">'+String(i+1).padStart(2,"0")+'</span><span class="player-cell">'+(p.photoUrl?'<img class="player-avatar player-photo" src="'+escapeHtml(p.photoUrl)+'" alt="" referrerpolicy="no-referrer">':'<span class="player-avatar">'+escapeHtml(p.initial)+'</span>')+'<span>'+escapeHtml(p.name)+(p.username?'<small>@'+escapeHtml(p.username)+'</small>':(p.me?'<small>ТВОЙ ПРОФИЛЬ</small>':'<small>УЧАСТНИК COIN</small>'))+'</span></span><span class="score-cell leader-games">'+fmt(p.games)+'<small>ИГР</small></span><span class="score-cell">'+fmt(p.score)+'<small>ОЧКОВ</small></span></div>').join("");
  $(target).innerHTML=head+rows;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -139,19 +139,21 @@ function openGame(id){
  $("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");
  $("gameStage").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function showMore(){["gameStage","gamesSection","leaderboardPreview","leaderboardPage","transferPage"].forEach(id=>$(id).classList.add("hidden"));$("morePage").classList.remove("hidden");document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="more"));if(isCoinAdmin)$("adminEntry")?.classList.remove("hidden");$("morePage").scrollIntoView({behavior:"smooth",block:"start"});}
+function setProfileAvatar(el,url,name){if(!el)return;if(url){el.innerHTML='<img src="'+escapeHtml(url)+'" alt="" referrerpolicy="no-referrer">';}else el.textContent=(name||"И").slice(0,1).toUpperCase();}
 function showCasino(){
- $("gameStage").classList.add("hidden");$("gamesSection").classList.remove("hidden");$("leaderboardPreview").classList.remove("hidden");$("leaderboardPage").classList.add("hidden");$("transferPage").classList.add("hidden");
+ $("gameStage").classList.add("hidden");$("gamesSection").classList.remove("hidden");$("leaderboardPreview").classList.remove("hidden");$("leaderboardPage").classList.add("hidden");$("transferPage").classList.add("hidden");$("morePage").classList.add("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="casino"));
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="casino"));
 }
 function showLeaderboard(){
- $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("transferPage").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
+ $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("transferPage").classList.add("hidden");$("morePage").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
  document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="leaderboard"));
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="leaderboard"));
  renderBoard("fullBoard",20);refreshBoard(activePeriod);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function showTransfer(){
- $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("leaderboardPage").classList.add("hidden");$("transferPage").classList.remove("hidden");updateStats();$("transferPage").scrollIntoView({behavior:"smooth",block:"start"});
+ $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("leaderboardPage").classList.add("hidden");$("morePage").classList.add("hidden");$("transferPage").classList.remove("hidden");updateStats();$("transferPage").scrollIntoView({behavior:"smooth",block:"start"});
  document.querySelectorAll("[data-bottom]").forEach(b=>b.classList.toggle("active",b.dataset.bottom==="transfer"));
 }
 function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
@@ -191,6 +193,14 @@ function play(){
  },750);
 }
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>b.dataset.page==="leaderboard"?showLeaderboard():showCasino()));
+document.querySelectorAll("[data-bottom]").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.bottom==="casino")showCasino();else if(b.dataset.bottom==="leaderboard")showLeaderboard();else if(b.dataset.bottom==="transfer")showTransfer();else if(b.dataset.bottom==="more")showMore();}));
+$("bottomProfile").addEventListener("click",()=>{$("nicknameInput").value=state.nickname||"Игрок";setProfileAvatar($("profileAvatar"),state.telegramPhoto,state.nickname);$("profileModal").classList.remove("hidden");});
+$("sendTransfer").addEventListener("click",async()=>{const username=$("transferUsername").value.trim().replace(/^@/,""),amount=Math.floor(Number($("transferAmount").value));if(!username||!amount||amount<1){notify("Укажи username и сумму перевода");return;}const b=$("sendTransfer");b.disabled=true;try{const r=await fetch("/api/transfer",{method:"POST",headers:apiHeaders(),body:JSON.stringify({username,amount})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Перевод не выполнен");state.balance=d.balance;save();updateStats();await syncPlayer();$("transferAmount").value="";notify("Переведено "+fmt(amount)+" CR игроку "+d.recipient);}catch(e){notify(e.message);}finally{b.disabled=false;}});
+$("openAdmin").addEventListener("click",()=>{if(!isCoinAdmin)return notify("Нет доступа");$("adminPanel").classList.remove("hidden");});
+$("closeAdmin").addEventListener("click",()=>$("adminPanel").classList.add("hidden"));
+async function sendBroadcast(mode){if(!isCoinAdmin)return notify("Нет доступа");const message=$("broadcastText").value.trim();if(!message)return notify("Введи текст рассылки");if(mode==="all"&&!confirm("Отправить сообщение всем игрокам Coin?"))return;const status=$("broadcastStatus");status.textContent="Отправка…";try{const r=await fetch("/api/admin/broadcast",{method:"POST",headers:apiHeaders(),body:JSON.stringify({message,mode})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Ошибка рассылки");status.textContent="Отправлено: "+d.sent+" · Не доставлено: "+d.failed;notify("Рассылка завершена");}catch(e){status.textContent=e.message;notify(e.message);}}
+$("sendSelf").addEventListener("click",()=>sendBroadcast("self"));$("sendAll").addEventListener("click",()=>sendBroadcast("all"));
+
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{activeFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderGames();}));
 document.querySelectorAll("[data-period]").forEach(b=>b.addEventListener("click",()=>{activePeriod=b.dataset.period;document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x===b));refreshBoard(activePeriod);}));
 $("jumpGames").addEventListener("click",()=>{showCasino();$("gamesSection").scrollIntoView({behavior:"smooth"});});
@@ -199,8 +209,8 @@ $("playButton").addEventListener("click",play);
 $("betMinus").addEventListener("click",()=>{$("betInput").value=Math.max(10,(Number($("betInput").value)||10)-10);});
 $("betPlus").addEventListener("click",()=>{$("betInput").value=Math.min(state.balance,(Number($("betInput").value)||0)+10);});
 document.querySelectorAll("[data-bet]").forEach(b=>b.addEventListener("click",()=>{$("betInput").value=b.dataset.bet==="max"?state.balance:Math.min(state.balance,Number(b.dataset.bet));}));
-$("profileOpen").addEventListener("click",()=>{$("nicknameInput").value=state.nickname||"Vlad";$("profileAvatar").textContent=(state.nickname||"V").slice(0,1).toUpperCase();$("profileModal").classList.remove("hidden");});
+$("profileOpen").addEventListener("click",()=>{$("nicknameInput").value=state.nickname||"Игрок";setProfileAvatar($("profileAvatar"),state.telegramPhoto,state.nickname);$("profileModal").classList.remove("hidden");});
 $("profileClose").addEventListener("click",()=>$("profileModal").classList.add("hidden"));
 $("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))$("profileModal").classList.add("hidden");});
-$("saveProfile").addEventListener("click",()=>{const name=$("nicknameInput").value.trim().slice(0,18);if(!name){notify("Введи игровое имя");return;}state.nickname=name;save();$("profileModal").classList.add("hidden");updateStats();syncPlayer();renderBoard("previewBoard",5);renderBoard("fullBoard",20);notify("Профиль сохранён");});
-renderGames();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);syncPlayer();
+$("saveProfile").addEventListener("click",()=>{if(telegramUser){notify("Имя профиля берётся из Telegram");$("profileModal").classList.add("hidden");return;}const name=$("nicknameInput").value.trim().slice(0,18);if(!name){notify("Введи игровое имя");return;}state.nickname=name;save();$("profileModal").classList.add("hidden");updateStats();syncPlayer();renderBoard("previewBoard",5);renderBoard("fullBoard",20);notify("Профиль сохранён");});
+renderGames();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);initTelegram().then(()=>syncPlayer());
