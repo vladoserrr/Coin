@@ -45,6 +45,7 @@ let isCoinAdmin = false;
 let roundCounter = 0;
 let animationTimers = [];
 let animationToken = 0;
+let blackjackRound = null;
 function clearGameAnimation(){animationToken++;animationTimers.forEach(clearTimeout);animationTimers=[];}
 function apiHeaders(){return {"Content-Type":"application/json",...(telegramInitData?{"X-Telegram-Init-Data":telegramInitData}:{})};}
 async function initTelegram(){
@@ -141,7 +142,7 @@ function openGame(id){
  currentGame=GAMES.find(g=>g.id===id);if(!currentGame)return;gameChoice="";renderGameOptions();
  $("stageIcon").innerHTML=svgIcon(currentGame.id);$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
  $("displayResult").textContent="?";$("displayCaption").textContent="ГОТОВ К ИГРЕ";$("resultNote").textContent=currentGame.hint+" · Выбери ставку и нажми «Играть».";
- $("resultNote").className="result-note";$("gameStage").classList.remove("hidden");
+ $("resultNote").className="result-note";$("blackjackActions").classList.toggle("hidden",!(currentGame.id==="blackjack"&&blackjackRound));if(currentGame.id==="blackjack"&&blackjackRound)renderBlackjack();$("gameStage").classList.remove("hidden");
  $("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");
  $("gameStage").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -240,6 +241,35 @@ async function publishRoundHash(game,result){
  catch{$("roundHash").textContent="Хеш временно недоступен";}
 }
 
+function blackjackValue(cards){return cards.reduce((sum,c)=>sum+(c===1?11:c>=10?10:c),0);}
+function blackjackCard(v){return v===1?"A":v===11?"J":v===12?"Q":v===13?"K":String(v);}
+function renderBlackjack(reveal=false){
+ const r=blackjackRound;if(!r)return;const total=blackjackValue(r.player),dealer=blackjackValue(r.dealer);
+ const card=(v,hidden=false)=>'<div class="playing-card '+(hidden?"card-hidden":"")+'">'+(hidden?"?":blackjackCard(v))+'<small>'+(hidden?"◆":v===1||v>=11?"♠":"♥")+'</small></div>';
+ $("gameDisplay").innerHTML='<div class="display-caption">БЛЭКДЖЕК · ТВОЙ ХОД</div><div class="blackjack-hands"><div class="blackjack-hand"><small>ТВОИ КАРТЫ · '+total+'</small><div class="card-table">'+r.player.map(v=>card(v)).join("")+'</div></div><div class="blackjack-hand"><small>ДИЛЕР · '+(reveal?dealer:"?")+'</small><div class="card-table">'+r.dealer.map((v,i)=>card(v,!reveal&&i===1)).join("")+'</div></div></div><div class="display-result">'+(total>21?"ПЕРЕБОР":total===21?"21":"ТВОЙ ХОД")+'</div>';
+ $("blackjackActions").classList.toggle("hidden",r.finished);$("playButton").disabled=!r.finished;$("playButton").innerHTML=r.finished?'ИГРАТЬ СНОВА <span>→</span>':'РАУНД ИДЁТ…';
+}
+function finishBlackjack(reason){
+ const r=blackjackRound;if(!r||r.finished)return;r.finished=true;
+ let dealer=blackjackValue(r.dealer),player=blackjackValue(r.player);
+ if(reason==="stand"){while(dealer<17&&r.dealer.length<8){r.dealer.push(randomInt(1,13));dealer=blackjackValue(r.dealer);}}
+ const win=player<=21&&(dealer>21||player>dealer),push=player<=21&&player===dealer;
+ const payout=push?r.bet:win?Math.floor(r.bet*1.95):0;state.balance+=payout;
+ const delta=payout-r.bet;state.played++;if(win)state.wins++;
+ const points=Math.max(0,delta)+Math.max(1,Math.floor(r.bet*.04));state.score+=points;
+ const label=player+" : "+dealer;state.history.unshift({game:"Блэкджек",delta,at:Date.now(),result:label});state.history=state.history.slice(0,30);
+ save();updateStats();renderBlackjack(true);
+ $("resultNote").textContent=(push?"Ничья — ставка возвращена.":win?"Ты выиграл у дилера.":"Дилер выиграл.")+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"");$("resultNote").className="result-note "+(delta>0?"win":delta<0?"lose":"");
+ $("blackjackActions").classList.add("hidden");$("playButton").disabled=false;$("playButton").innerHTML='ИГРАТЬ СНОВА <span>→</span>';
+ Promise.resolve(syncScore(points,win)).catch(console.warn);Promise.resolve(publishRoundHash("Блэкджек",label)).catch(console.warn);
+}
+function startBlackjack(bet){
+ if(blackjackRound&&!blackjackRound.finished){notify("Сначала заверши текущую раздачу");return;}
+ state.balance-=bet;save();updateStats();blackjackRound={bet,player:[randomInt(1,13),randomInt(1,13)],dealer:[randomInt(1,13),randomInt(1,13)],finished:false};
+ $("resultNote").textContent="Нажми «Взять ещё», чтобы добрать карту, или «Стоп», чтобы завершить раздачу.";renderBlackjack();
+}
+$("blackjackHit").addEventListener("click",()=>{const r=blackjackRound;if(!r||r.finished)return;r.player.push(randomInt(1,13));renderBlackjack();const total=blackjackValue(r.player);if(total>21)finishBlackjack("bust");else if(total===21)finishBlackjack("stand");});
+$("blackjackStand").addEventListener("click",()=>finishBlackjack("stand"));
 function play(){
  if(!currentGame)return;
  const playedGame=currentGame;
@@ -247,6 +277,7 @@ function play(){
  const input=$("betInput");const bet=Math.floor(Number(input.value));
  if(!Number.isFinite(bet)||bet<10){notify("Минимальная ставка — 10 CR");return;}
  if(bet>state.balance){notify("Недостаточно виртуальных кредитов");return;}
+ if(currentGame.id==="blackjack"){startBlackjack(bet);return;}
  const button=$("playButton");
  if(button.disabled)return;
  button.disabled=true;button.textContent="РАУНД ИДЁТ…";roundCounter++;
