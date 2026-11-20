@@ -144,7 +144,7 @@ function openGame(id){
  $("gameDisplay").innerHTML='<div class="display-orbit"></div><div class="display-result" id="displayResult">?</div><div class="display-caption" id="displayCaption">ГОТОВ К ИГРЕ</div>';$("blackjackActions").classList.add("hidden");
  $("stageIcon").innerHTML=svgIcon(currentGame.id);$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
  $("displayResult").textContent="?";$("displayCaption").textContent="ГОТОВ К ИГРЕ";$("resultNote").textContent=currentGame.hint+" · Выбери ставку и нажми «Играть».";
- $("resultNote").className="result-note";$("blackjackActions").classList.toggle("hidden",!(currentGame.id==="blackjack"&&blackjackRound));if(currentGame.id==="blackjack"&&blackjackRound)renderBlackjack();$("gameStage").classList.remove("hidden");
+ $("resultNote").className="result-note";$("blackjackActions").classList.toggle("hidden",!(currentGame.id==="blackjack"&&blackjackRound));if(currentGame.id==="blackjack"&&blackjackRound)renderBlackjack(blackjackRound.finished);$("gameStage").classList.remove("hidden");
  $("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");
  $("gameStage").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -180,7 +180,7 @@ const GAME_CHOICES = {
  plinko:{label:"Риск и таблица выплат",items:[["low","Низкий"],["medium","Средний"],["high","Высокий"]]},
  wheel:{label:"На какой сектор ставим?",items:[["blue","Синий"],["red","Красный"],["gold","Золотой"]]},
  hilo:{label:"Следующая карта будет…",items:[["higher","Выше"],["lower","Ниже"]]},
- blackjack:{label:"Решение игрока",items:[["hit","Взять карту"],["stand","Остановиться"]]},
+ blackjack:{label:"Игровой процесс",items:[["deal","Начать раздачу"]]},
  baccarat:{label:"На кого ставим?",items:[["player","Игрок"],["banker","Банк"],["tie","Ничья"]]},
  keno:{label:"Выбери комбинацию из 3 чисел",items:[["1,12,24","01 · 12 · 24"],["7,17,27","07 · 17 · 27"],["9,19,29","09 · 19 · 29"]]},
  crash:{label:"Автовывод на множителе",items:[["1.5","×1.50"],["2","×2.00"],["3","×3.00"],["5","×5.00"]]},
