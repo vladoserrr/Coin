@@ -31,6 +31,12 @@ const load = (key, fallback) => { try { const v = JSON.parse(localStorage.getIte
 let state = load("coinState", {balance:10000,wins:0,played:0,score:0,nickname:"Vlad",history:[]});
 let currentGame = null;
 let activeFilter = "all";
+let remotePlayers = [];
+let playerId = load("coinPlayerId", "");
+if (!playerId) {
+ playerId = "coin_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+ localStorage.setItem("coinPlayerId", playerId);
+}
 let toastTimer;
 
 function save(){ localStorage.setItem("coinState",JSON.stringify(state)); }
@@ -44,9 +50,32 @@ function updateStats(){
  $("statRank").textContent=rank<0?"—":"#"+(rank+1);
 }
 function buildBoard(){
+ if(remotePlayers.length){
+  return remotePlayers.map(p=>({name:p.nickname,score:p.score,games:p.games,initial:(p.nickname||"И").slice(0,1).toUpperCase(),me:p.id===playerId}));
+ }
  const players=DEMO_PLAYERS.map(p=>({...p,me:false}));
  players.push({name:state.nickname||"Игрок",score:state.score,games:state.played,initial:(state.nickname||"V").slice(0,1).toUpperCase(),me:true});
  return players.sort((a,b)=>b.score-a.score);
+}
+async function refreshBoard(){
+ try{
+  const response=await fetch("/api/leaderboard",{cache:"no-store"});
+  if(!response.ok)throw new Error("leaderboard unavailable");
+  const data=await response.json();remotePlayers=data.players||[];
+  updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+ }catch(error){console.warn("Coin leaderboard:",error.message);}
+}
+async function syncPlayer(){
+ try{
+  await fetch("/api/player",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({playerId,nickname:state.nickname||"Игрок"})});
+  await refreshBoard();
+ }catch(error){console.warn("Coin player sync:",error.message);}
+}
+async function syncScore(points,won){
+ try{
+  await fetch("/api/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({playerId,nickname:state.nickname||"Игрок",points,won})});
+  await refreshBoard();
+ }catch(error){console.warn("Coin score sync:",error.message);}
 }
 function renderBoard(target,limit){
  const board=buildBoard().slice(0,limit);
@@ -106,7 +135,7 @@ function play(){
  $("displayCaption").textContent="ПРОВЕРЯЕМ УДАЧУ…";$("resultNote").className="result-note";$("resultNote").textContent="Результат формируется…";
  setTimeout(()=>{
   const res=outcome(currentGame.id);const payout=Math.floor(bet*res.mult);const delta=payout-bet;
-  state.balance+=delta;state.played++;if(delta>0)state.wins++;state.score+=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.history.unshift({game:currentGame.name,delta,at:Date.now()});state.history=state.history.slice(0,20);save();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+  state.balance+=delta;state.played++;if(delta>0)state.wins++;const points=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.score+=points;state.history.unshift({game:currentGame.name,delta,at:Date.now()});state.history=state.history.slice(0,20);save();updateStats();syncScore(points,delta>0);renderBoard("previewBoard",5);renderBoard("fullBoard",20);
   display.textContent=res.label;$("displayCaption").textContent=res.caption;
   const note=$("resultNote");note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");note.className="result-note "+(delta>0?"win":delta<0?"lose":"");
   button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
@@ -123,5 +152,5 @@ document.querySelectorAll("[data-bet]").forEach(b=>b.addEventListener("click",()
 $("profileOpen").addEventListener("click",()=>{$("nicknameInput").value=state.nickname||"Vlad";$("profileModal").classList.remove("hidden");});
 $("profileClose").addEventListener("click",()=>$("profileModal").classList.add("hidden"));
 $("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))$("profileModal").classList.add("hidden");});
-$("saveProfile").addEventListener("click",()=>{const name=$("nicknameInput").value.trim().slice(0,18);if(!name){notify("Введи игровое имя");return;}state.nickname=name;save();$("profileModal").classList.add("hidden");updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);notify("Профиль сохранён");});
-renderGames();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+$("saveProfile").addEventListener("click",()=>{const name=$("nicknameInput").value.trim().slice(0,18);if(!name){notify("Введи игровое имя");return;}state.nickname=name;save();$("profileModal").classList.add("hidden");updateStats();syncPlayer();renderBoard("previewBoard",5);renderBoard("fullBoard",20);notify("Профиль сохранён");});
+renderGames();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);syncPlayer();
