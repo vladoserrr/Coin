@@ -1,0 +1,127 @@
+const GAMES = [
+ {id:"dice",name:"Кости",icon:"🎲",desc:"Брось кубик и поймай высокий результат.",type:"luck",category:"LUCK",hint:"Выпало 4–6 — выигрыш ×2"},
+ {id:"coin",name:"Монетка",icon:"🪙",desc:"Орёл или решка — решает один бросок.",type:"luck",category:"LUCK",hint:"Угадай сторону — ×1.9"},
+ {id:"roulette",name:"Рулетка",icon:"🎡",desc:"Крути колесо и лови редкий сектор.",type:"luck",category:"LUCK",hint:"Красное ×2 · Золото ×8"},
+ {id:"mines",name:"Мины",icon:"💣",desc:"Открой безопасную ячейку и забери множитель.",type:"skill",category:"SKILL",hint:"Безопасный ход — ×1.7"},
+ {id:"slots",name:"Слоты",icon:"🎰",desc:"Собери одинаковые символы на барабанах.",type:"luck",category:"LUCK",hint:"Комбинации до ×8"},
+ {id:"plinko",name:"Плинко",icon:"🔻",desc:"Отпусти шар и смотри, куда он упадёт.",type:"luck",category:"LUCK",hint:"Множители от ×0.2 до ×5"},
+ {id:"wheel",name:"Колесо",icon:"☸️",desc:"Испытай удачу на секторном колесе.",type:"luck",category:"LUCK",hint:"Случайный множитель до ×10"},
+ {id:"hilo",name:"Выше-ниже",icon:"🃏",desc:"Угадай, будет следующая карта выше или ниже.",type:"skill",category:"SKILL",hint:"Верный прогноз — ×1.8"},
+ {id:"blackjack",name:"Блэкджек",icon:"♠️",desc:"Набери ближе к 21, чем дилер.",type:"skill",category:"SKILL",hint:"Победа — ×1.9"},
+ {id:"baccarat",name:"Баккара",icon:"♦️",desc:"Предскажи, чья сумма будет ближе к девяти.",type:"luck",category:"LUCK",hint:"Победа ×1.95 · ничья ×8"},
+ {id:"keno",name:"Кено",icon:"🔢",desc:"Выбери удачное число из случайного тиража.",type:"luck",category:"LUCK",hint:"Попадание — ×5"},
+ {id:"crash",name:"Краш",icon:"🚀",desc:"Забери выигрыш до того, как график рухнет.",type:"skill",category:"SKILL",hint:"Множитель до ×4"},
+ {id:"limbo",name:"Лимбо",icon:"📈",desc:"Поймай случайный множитель выше цели.",type:"skill",category:"SKILL",hint:"Цель ×2 · выплата ×2"},
+ {id:"towers",name:"Башни",icon:"🗼",desc:"Поднимайся выше, не попав на ловушку.",type:"skill",category:"SKILL",hint:"Каждый шаг повышает множитель"}
+];
+
+const DEMO_PLAYERS = [
+ {name:"LuckyFox",score:18420,games:126,initial:"L"},
+ {name:"NeonWolf",score:15280,games:98,initial:"N"},
+ {name:"GoldRush",score:11950,games:84,initial:"G"},
+ {name:"MisterX",score:9750,games:71,initial:"M"},
+ {name:"PixelKing",score:8320,games:65,initial:"P"},
+ {name:"DarkAce",score:7210,games:53,initial:"D"},
+ {name:"StarBoy",score:6150,games:47,initial:"S"}
+];
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Math.floor(n).toLocaleString("ru-RU");
+const load = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; } };
+let state = load("coinState", {balance:10000,wins:0,played:0,score:0,nickname:"Vlad",history:[]});
+let currentGame = null;
+let activeFilter = "all";
+let toastTimer;
+
+function save(){ localStorage.setItem("coinState",JSON.stringify(state)); }
+function notify(message){ const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2400); }
+function updateStats(){
+ $("headerBalance").textContent=fmt(state.balance);
+ $("statBalance").textContent=fmt(state.balance)+" CR";
+ $("statWins").textContent=fmt(state.wins);
+ $("statPlayed").textContent=fmt(state.played);
+ const rank=buildBoard().findIndex(p=>p.me);
+ $("statRank").textContent=rank<0?"—":"#"+(rank+1);
+}
+function buildBoard(){
+ const players=DEMO_PLAYERS.map(p=>({...p,me:false}));
+ players.push({name:state.nickname||"Игрок",score:state.score,games:state.played,initial:(state.nickname||"V").slice(0,1).toUpperCase(),me:true});
+ return players.sort((a,b)=>b.score-a.score);
+}
+function renderBoard(target,limit){
+ const board=buildBoard().slice(0,limit);
+ const head='<div class="leader-row leader-head"><span>МЕСТО</span><span>ИГРОК</span><span class="leader-games">СЫГРАНО</span><span style="text-align:right">ОЧКИ</span></div>';
+ const rows=board.map((p,i)=>'<div class="leader-row"><span class="rank '+(i<3?'r'+(i+1):'')+'">'+(i===0?'♛':String(i+1).padStart(2,"0"))+'</span><span class="player-cell"><span class="player-avatar">'+escapeHtml(p.initial)+'</span><span>'+escapeHtml(p.name)+(p.me?'<small>ТВОЙ ПРОФИЛЬ</small>':'<small>УЧАСТНИК СЕЗОНА · DEMO</small>')+'</span></span><span class="score-cell leader-games">'+fmt(p.games)+'<small>ИГР</small></span><span class="score-cell">'+fmt(p.score)+'<small>ОЧКОВ</small></span></div>').join("");
+ $(target).innerHTML=head+rows;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderGames(){
+ $("gamesGrid").innerHTML=GAMES.filter(g=>activeFilter==="all"||g.type===activeFilter).map(g=>'<button class="game-card" data-game="'+g.id+'" style="--glow:'+(g.type==="skill"?"#61d9dc":"#f3c76a")+'"><div class="game-card-top"><span class="game-icon">'+g.icon+'</span><span class="game-type">'+(g.type==="skill"?"SKILL GAME":"LUCK GAME")+'</span></div><h3>'+g.name+'</h3><p>'+g.desc+'</p><div class="game-card-foot"><span>'+g.hint.toUpperCase()+'</span><span>↗</span></div></button>').join("");
+ document.querySelectorAll("[data-game]").forEach(el=>el.addEventListener("click",()=>openGame(el.dataset.game)));
+}
+function openGame(id){
+ currentGame=GAMES.find(g=>g.id===id);if(!currentGame)return;
+ $("stageIcon").textContent=currentGame.icon;$("stageTitle").textContent=currentGame.name;$("stageDesc").textContent=currentGame.desc;$("stageCategory").textContent=currentGame.category;
+ $("displayResult").textContent="?";$("displayCaption").textContent="ГОТОВ К ИГРЕ";$("resultNote").textContent=currentGame.hint+" · Выбери ставку и нажми «Играть».";
+ $("resultNote").className="result-note";$("gameStage").classList.remove("hidden");
+ $("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");
+ $("gameStage").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function showCasino(){
+ $("gameStage").classList.add("hidden");$("gamesSection").classList.remove("hidden");$("leaderboardPreview").classList.remove("hidden");$("leaderboardPage").classList.add("hidden");
+ document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="casino"));
+}
+function showLeaderboard(){
+ $("gameStage").classList.add("hidden");$("gamesSection").classList.add("hidden");$("leaderboardPreview").classList.add("hidden");$("leaderboardPage").classList.remove("hidden");
+ document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page==="leaderboard"));
+ renderBoard("fullBoard",20);$("leaderboardPage").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function outcome(id){
+ switch(id){
+  case "dice":{const n=randomInt(1,6);return {label:"🎲 "+n,caption:"БРОСОК КУБИКА",mult:n>=4?2:0,detail:n>=4?"Высокий бросок — победа!":"Не хватило до четырёх."};}
+  case "coin":{const side=Math.random()<.5?"ОРЁЛ":"РЕШКА";return {label:side==="ОРЁЛ"?"🦅":"◉",caption:side,mult:Math.random()<.5?1.9:0,detail:"Монетка выбрала: "+side};}
+  case "roulette":{const n=randomInt(0,36);const mult=n===0?8:(n%2===0?0:2);return {label:String(n),caption:n===0?"ЗОЛОТОЙ СЕКТОР":n%2===0?"ЧЁРНОЕ":"КРАСНОЕ",mult,detail:n===0?"Редкий золотой сектор!":mult?"Красный сектор — выигрыш.":"Чёрный сектор в этот раз."};}
+  case "mines":{const safe=Math.random()<.57;return {label:safe?"💎":"💣",caption:safe?"БЕЗОПАСНО":"МИНА",mult:safe?1.7:0,detail:safe?"Ты нашёл безопасную ячейку.":"Мина! Ставка сгорела."};}
+  case "slots":{const symbols=["🍒","🍋","🔔","⭐","7️⃣"];const a=symbols[randomInt(0,4)],b=symbols[randomInt(0,4)],c=symbols[randomInt(0,4)];const mult=a===b&&b===c?(a==="7️⃣"?8:a==="⭐"?5:3):(a===b||b===c||a===c?1.5:0);return {label:a+" "+b+" "+c,caption:mult?"КОМБИНАЦИЯ":"НЕТ КОМБИНАЦИИ",mult,detail:mult>=3?"Три одинаковых символа!":mult?"Есть совпадение — небольшой выигрыш.":"Попробуй ещё раз."};}
+  case "plinko":{const vals=[.2,.5,.5,1,1,1.5,2,5];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"ШАР ОСТАНОВИЛСЯ",mult:m,detail:"Шар попал в сектор ×"+m};}
+  case "wheel":{const vals=[0,.5,1,1.5,2,3,5,10];const m=vals[randomInt(0,vals.length-1)];return {label:"×"+m,caption:"СЕКТОР КОЛЕСА",mult:m,detail:m>=5?"Редкий сектор! Отличный результат.":"Колесо остановилось на ×"+m};}
+  case "hilo":{const a=randomInt(2,14),b=randomInt(2,14),higher=Math.random()<.5;const win=higher?b>a:b<a;return {label:a+" → "+b,caption:higher?"ПРОГНОЗ: ВЫШЕ":"ПРОГНОЗ: НИЖЕ",mult:win?1.8:0,detail:win?"Верный прогноз!":"На этот раз прогноз не сбылся."};}
+  case "blackjack":{const p=randomInt(15,22),d=randomInt(15,22);const win=p<=21&&(d>21||p>d);const push=p===d;return {label:p+" : "+d,caption:"ТЫ  /  ДИЛЕР",mult:push?1:win?1.9:0,detail:push?"Ничья — ставка возвращена.":win?"Ты обошёл дилера!": "Дилер победил."};}
+  case "baccarat":{const p=randomInt(0,9),b=randomInt(0,9);const win=p>b;const tie=p===b;return {label:p+" : "+b,caption:"ИГРОК  /  БАНК",mult:tie?8:win?1.95:0,detail:tie?"Ничья — ×8!":win?"Победил игрок.":"Победил банк."};}
+  case "keno":{const hit=Math.random()<.2;return {label:hit?"★":"·",caption:hit?"ЧИСЛО УГАДАНО":"МИМО",mult:hit?5:0,detail:hit?"Есть попадание — ×5!":"Тираж не совпал с твоим числом."};}
+  case "crash":{const crash=+(1+Math.random()*3).toFixed(2);const cashout=+(1+Math.random()*2.5).toFixed(2);const win=cashout<crash;return {label:"×"+(win?cashout:crash),caption:win?"УСПЕЛ ЗАБРАТЬ":"КРАШ",mult:win?cashout:0,detail:win?"Ты забрал до падения графика!":"График рухнул раньше вывода."};}
+  case "limbo":{const m=+(Math.random()*4.8+.2).toFixed(2);return {label:"×"+m,caption:"СЛУЧАЙНЫЙ МНОЖИТЕЛЬ",mult:m>=2?2:0,detail:m>=2?"Цель ×2 пройдена!":"Множитель ниже цели ×2."};}
+  case "towers":{let steps=0;for(let i=0;i<4;i++){if(Math.random()<.68)steps++;else break;}const mult=steps===0?0:+Math.pow(1.35,steps).toFixed(2);return {label:steps+" / 4",caption:"ПРОЙДЕНО ЭТАЖЕЙ",mult,detail:steps===4?"Ты покорил башню!":steps?"Ты поднялся на "+steps+" этаж(а).":"Ловушка на первом этаже."};}
+  default:return {label:"?",caption:"РЕЗУЛЬТАТ",mult:0,detail:"Попробуй ещё раз."};
+ }
+}
+function play(){
+ if(!currentGame)return;
+ const input=$("betInput");let bet=Math.floor(Number(input.value));
+ if(!Number.isFinite(bet)||bet<10){notify("Минимальная ставка — 10 CR");return;}
+ if(bet>state.balance){notify("Недостаточно виртуальных кредитов");return;}
+ const button=$("playButton");button.disabled=true;button.textContent="ИГРА ИДЁТ…";
+ const display=$("displayResult");display.classList.remove("rolling");void display.offsetWidth;display.classList.add("rolling");
+ $("displayCaption").textContent="ПРОВЕРЯЕМ УДАЧУ…";$("resultNote").className="result-note";$("resultNote").textContent="Результат формируется…";
+ setTimeout(()=>{
+  const res=outcome(currentGame.id);const payout=Math.floor(bet*res.mult);const delta=payout-bet;
+  state.balance+=delta;state.played++;if(delta>0)state.wins++;state.score+=Math.max(0,delta)+Math.max(1,Math.floor(bet*.04));state.history.unshift({game:currentGame.name,delta,at:Date.now()});state.history=state.history.slice(0,20);save();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
+  display.textContent=res.label;$("displayCaption").textContent=res.caption;
+  const note=$("resultNote");note.textContent=res.detail+" "+(delta>0?"+"+fmt(delta)+" CR":delta<0?"−"+fmt(Math.abs(delta))+" CR":"Ставка возвращена.");note.className="result-note "+(delta>0?"win":delta<0?"lose":"");
+  button.disabled=false;button.innerHTML='ИГРАТЬ <span>→</span>';
+ },750);
+}
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>b.dataset.page==="leaderboard"?showLeaderboard():showCasino()));
+document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{activeFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderGames();}));
+$("jumpGames").addEventListener("click",()=>{showCasino();$("gamesSection").scrollIntoView({behavior:"smooth"});});
+$("backGames").addEventListener("click",showCasino);
+$("playButton").addEventListener("click",play);
+$("betMinus").addEventListener("click",()=>{$("betInput").value=Math.max(10,(Number($("betInput").value)||10)-10);});
+$("betPlus").addEventListener("click",()=>{$("betInput").value=Math.min(state.balance,(Number($("betInput").value)||0)+10);});
+document.querySelectorAll("[data-bet]").forEach(b=>b.addEventListener("click",()=>{$("betInput").value=b.dataset.bet==="max"?state.balance:Math.min(state.balance,Number(b.dataset.bet));}));
+$("profileOpen").addEventListener("click",()=>{$("nicknameInput").value=state.nickname||"Vlad";$("profileModal").classList.remove("hidden");});
+$("profileClose").addEventListener("click",()=>$("profileModal").classList.add("hidden"));
+$("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))$("profileModal").classList.add("hidden");});
+$("saveProfile").addEventListener("click",()=>{const name=$("nicknameInput").value.trim().slice(0,18);if(!name){notify("Введи игровое имя");return;}state.nickname=name;save();$("profileModal").classList.add("hidden");updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);notify("Профиль сохранён");});
+renderGames();updateStats();renderBoard("previewBoard",5);renderBoard("fullBoard",20);
