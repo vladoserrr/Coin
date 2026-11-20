@@ -16,7 +16,7 @@
 <div class="app-shell">
   <header class="topbar">
     <a class="brand" href="#" aria-label="Coin home"><span class="brand-mark">C</span><span>COIN<span class="brand-dot">.</span></span></a>
-    <nav class="top-nav"><button class="nav-link active" data-page="casino">Казино</button><button class="nav-link" data-page="leaderboard">Топ игроков</button></nav>
+    
     <div class="top-actions"><div class="balance-pill"><span class="coin-mini">C</span><span id="headerBalance">10 000</span><small>CR</small></div><button class="avatar" id="profileOpen" aria-label="Профиль">V</button></div>
   </header>
 
@@ -26,21 +26,21 @@
         <div class="eyebrow"><span class="live-dot"></span> COIN GAME CLUB <span class="eyebrow-line"></span> SEASON 01</div>
         <h1>ИГРАЙ.<br><span>ПОПАДАЙ В ТОП.</span></h1>
         <p>14 игровых режимов. Один общий рейтинг. Докажи, что удача на твоей стороне.</p>
-        <div class="hero-actions"><button class="btn btn-gold" id="jumpGames">Выбрать игру <span>↗</span></button><button class="btn btn-ghost" data-page="leaderboard">Смотреть рейтинг</button></div>
+        <div class="hero-actions"><button class="btn btn-gold" id="jumpGames">Выбрать режим <span>→</span></button></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-        <div class="hero-coin"><span>C</span><i>✦</i></div>
-        <div class="float-chip chip-one">×12.5</div><div class="float-chip chip-two">LUCKY</div><div class="float-chip chip-three">★</div>
+        <div class="hero-coin"><span>C</span><i></i></div>
+        <div class="float-chip chip-one">×12.5</div><div class="float-chip chip-two">LUCKY</div><div class="float-chip chip-three"><span class="spark-mark"></span></div>
       </div>
       <div class="hero-foot"><span><b>14</b> РЕЖИМОВ</span><span><b>24/7</b> ИГРА</span><span><b>TOP 3</b> ПРИЗОВЫЕ МЕСТА</span></div>
     </section>
 
     <section class="stats-row">
-      <div class="stat-card"><span class="stat-icon">◈</span><div><small>ТВОЙ БАЛАНС</small><strong id="statBalance">10 000 CR</strong></div></div>
-      <div class="stat-card"><span class="stat-icon">♛</span><div><small>ТВОЁ МЕСТО</small><strong id="statRank">—</strong></div></div>
-      <div class="stat-card"><span class="stat-icon">↗</span><div><small>ПОБЕДЫ</small><strong id="statWins">0</strong></div></div>
-      <div class="stat-card"><span class="stat-icon">◎</span><div><small>СЫГРАНО ИГР</small><strong id="statPlayed">0</strong></div></div>
+      <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9 9h5a2 2 0 0 1 0 4H9"/></svg></span><div><small>ТВОЙ БАЛАНС</small><strong id="statBalance">10 000 CR</strong></div></div>
+      <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 4 3 4-6 4 6 4-3-2 10H6L4 8Z"/></svg></span><div><small>ТВОЁ МЕСТО</small><strong id="statRank">—</strong></div></div>
+      <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17 17 5M7 5h10v10"/></svg></span><div><small>ПОБЕДЫ</small><strong id="statWins">0</strong></div></div>
+      <div class="stat-card"><span class="stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span><div><small>СЫГРАНО ИГР</small><strong id="statPlayed">0</strong></div></div>
     </section>
 
     <section class="section" id="gamesSection">
@@ -51,7 +51,7 @@
     <section class="game-stage hidden" id="gameStage">
       <div class="stage-top"><button class="back-btn" id="backGames">← Все игры</button><span class="stage-label">COIN ARCADE / <b id="stageCategory">LUCK</b></span><span class="stage-live"><i></i> DEMO PLAY</span></div>
       <div class="stage-card">
-        <div class="stage-info"><div class="game-emblem" id="stageIcon">🎲</div><div><div class="eyebrow">ИГРОВОЙ РЕЖИМ</div><h2 id="stageTitle">Кости</h2><p id="stageDesc">Проверь удачу одним броском.</p></div></div>
+        <div class="stage-info"><div class="game-emblem" id="stageIcon"></div><div><div class="eyebrow">ИГРОВОЙ РЕЖИМ</div><h2 id="stageTitle">Кости</h2><p id="stageDesc">Проверь удачу одним броском.</p></div></div>
         <div class="game-display" id="gameDisplay"><div class="display-orbit"></div><div class="display-result" id="displayResult">?</div><div class="display-caption" id="displayCaption">ГОТОВ К ИГРЕ</div></div>
         <div class="play-controls">
           <div class="bet-control"><label for="betInput">РАЗМЕР СТАВКИ</label><div class="bet-input-wrap"><button id="betMinus" aria-label="Уменьшить">−</button><input id="betInput" type="number" min="10" max="100000" step="10" value="100"><span>CR</span><button id="betPlus" aria-label="Увеличить">+</button></div><div class="bet-quick"><button data-bet="50">50</button><button data-bet="100">100</button><button data-bet="250">250</button><button data-bet="500">500</button><button data-bet="max">MAX</button></div></div>
@@ -64,19 +64,36 @@
     <section class="section leaderboard-preview" id="leaderboardPreview">
       <div class="section-heading"><div><div class="eyebrow">THE BEST PLAYERS</div><h2>Лидеры сезона</h2><p>Поднимайся в рейтинге и забирай игровые награды</p></div><button class="btn btn-ghost" data-page="leaderboard">Весь рейтинг →</button></div>
       <div class="leaderboard-card" id="previewBoard"></div>
-      <div class="prize-strip"><div class="prize-title"><span class="prize-crown">♛</span><div><b>Награды сезона</b><small>Виртуальные призы лучшим игрокам</small></div></div><div class="prize-place"><span class="medal gold">1</span><div><b>1 место</b><small>5 000 CR</small></div></div><div class="prize-place"><span class="medal silver">2</span><div><b>2 место</b><small>2 500 CR</small></div></div><div class="prize-place"><span class="medal bronze">3</span><div><b>3 место</b><small>1 000 CR</small></div></div></div>
+      <div class="prize-strip"><div class="prize-title"><span class="prize-crown"><svg viewBox="0 0 24 24"><path d="m4 8 4 3 4-6 4 6 4-3-2 10H6L4 8Z"/></svg></span><div><b>Награды сезона</b><small>Виртуальные призы лучшим игрокам</small></div></div><div class="prize-place"><span class="medal gold">1</span><div><b>1 место</b><small>5 000 CR</small></div></div><div class="prize-place"><span class="medal silver">2</span><div><b>2 место</b><small>2 500 CR</small></div></div><div class="prize-place"><span class="medal bronze">3</span><div><b>3 место</b><small>1 000 CR</small></div></div></div>
+    </section>
+
+    <section class="transfer-page hidden" id="transferPage">
+      <div class="transfer-panel">
+        <div class="transfer-symbol"><svg viewBox="0 0 24 24"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg></div>
+        <div class="eyebrow">COIN WALLET</div>
+        <h2>Перевод кредитов</h2>
+        <p>Внутренние переводы виртуальных CR между игроками появятся в следующем обновлении. Пополнений и вывода реальных денег здесь нет.</p>
+        <div class="transfer-balance"><span>ТВОЙ БАЛАНС</span><strong id="transferBalance">10 000 CR</strong></div>
+        <div class="transfer-status"><span class="status-dot"></span> Функция переводов готовится к запуску</div>
+      </div>
     </section>
 
     <section class="leaderboard-page hidden" id="leaderboardPage">
       <div class="section-heading"><div><div class="eyebrow">SEASON 01 / RANKING</div><h2>Таблица лидеров</h2><p>Рейтинг обновляется после каждой сыгранной партии</p></div><div class="leaderboard-tools"><div class="leader-tabs"><button class="leader-tab" data-period="daily">СЕГОДНЯ</button><button class="leader-tab" data-period="weekly">НЕДЕЛЯ</button><button class="leader-tab active" data-period="season">СЕЗОН</button></div><div class="season-tag">СЕЗОН 01 <span>● АКТИВЕН</span></div></div></div>
       <div class="leaderboard-card full-board" id="fullBoard"></div>
-      <div class="prize-strip large-prizes"><div class="prize-title"><span class="prize-crown">♛</span><div><b>Призовой фонд</b><small>Награды начисляются виртуальными кредитами</small></div></div><div class="prize-place"><span class="medal gold">1</span><div><b>Чемпион</b><small>5 000 CR</small></div></div><div class="prize-place"><span class="medal silver">2</span><div><b>Финалист</b><small>2 500 CR</small></div></div><div class="prize-place"><span class="medal bronze">3</span><div><b>Бронза</b><small>1 000 CR</small></div></div></div>
+      <div class="prize-strip large-prizes"><div class="prize-title"><span class="prize-crown"><svg viewBox="0 0 24 24"><path d="m4 8 4 3 4-6 4 6 4-3-2 10H6L4 8Z"/></svg></span><div><b>Призовой фонд</b><small>Награды начисляются виртуальными кредитами</small></div></div><div class="prize-place"><span class="medal gold">1</span><div><b>Чемпион</b><small>5 000 CR</small></div></div><div class="prize-place"><span class="medal silver">2</span><div><b>Финалист</b><small>2 500 CR</small></div></div><div class="prize-place"><span class="medal bronze">3</span><div><b>Бронза</b><small>1 000 CR</small></div></div></div>
     </section>
   </main>
   <footer><a class="brand footer-brand" href="#"><span class="brand-mark">C</span><span>COIN<span class="brand-dot">.</span></span></a><span>Игровой клуб · Виртуальные кредиты</span><span>18+ · Играйте ответственно</span></footer>
+  <nav class="bottom-nav" aria-label="Основная навигация">
+    <button class="bottom-nav-item active" data-bottom="casino"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Играть</span></button>
+    <button class="bottom-nav-item" data-bottom="leaderboard"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg></span><span>Топы</span></button>
+    <button class="bottom-nav-item" data-bottom="transfer"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 8h14m-4-4 4 4-4 4M20 16H6m4-4-4 4 4 4"/></svg></span><span>Перевод</span></button>
+    <button class="bottom-nav-item" id="bottomProfile"><span class="bottom-nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.3 3-5 7-5s6.3 1.7 7 5"/></svg></span><span>Профиль</span></button>
+  </nav>
 </div>
 
-<div class="modal-backdrop hidden" id="profileModal"><div class="modal"><button class="modal-close" id="profileClose">×</button><div class="eyebrow">PLAYER PROFILE</div><div class="profile-avatar">V</div><h2>Твой профиль</h2><label for="nicknameInput">Игровое имя</label><input id="nicknameInput" maxlength="18" value="Vlad"><p class="profile-hint">Имя будет отображаться в таблице лидеров на этом устройстве.</p><button class="btn btn-gold full-width" id="saveProfile">Сохранить</button></div></div>
+<div class="modal-backdrop hidden" id="profileModal"><div class="modal"><button class="modal-close" id="profileClose">×</button><div class="eyebrow">PLAYER PROFILE</div><div class="profile-avatar" id="profileAvatar">V</div><h2>Твой профиль</h2><label for="nicknameInput">Игровое имя</label><input id="nicknameInput" maxlength="18" value="Vlad"><p class="profile-hint">Имя будет отображаться в таблице лидеров на этом устройстве.</p><button class="btn btn-gold full-width" id="saveProfile">Сохранить</button></div></div>
 <div class="toast" id="toast"></div>
 <script src="/app.js"></script>
 </body>
