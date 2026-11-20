@@ -168,7 +168,7 @@ const GAME_CHOICES = {
  coin:{label:"Как упадёт монета?",items:[["heads","Орёл"],["tails","Решка"]]},
  roulette:{label:"Выбери сектор",items:[["red","Красное"],["black","Чёрное"],["green","Зеро · 0"]]},
  mines:{label:"Уровень риска",items:[["safe1","1 мина"],["safe3","3 мины"],["safe5","5 мин"]]},
- slots:{label:"Выбери линию",items:[["top","Верхняя линия"],["middle","Центральная"],["bottom","Нижняя линия"]]},
+ slots:{label:"Выбери комбинацию",items:[["any","Любая комбинация"],["seven","Три семёрки"],["bar","Три BAR"]]},
  plinko:{label:"Риск и таблица выплат",items:[["low","Низкий"],["medium","Средний"],["high","Высокий"]]},
  wheel:{label:"На какой сектор ставим?",items:[["blue","Синий"],["red","Красный"],["gold","Золотой"]]},
  hilo:{label:"Следующая карта будет…",items:[["higher","Выше"],["lower","Ниже"]]},
@@ -205,7 +205,7 @@ function choiceOutcome(id,choice){
  case "coin":{const side=Math.random()<.5?"heads":"tails",win=side===choice;return {label:side==="heads"?"ОРЁЛ":"РЕШКА",caption:"БРОСОК МОНЕТЫ",mult:win?1.9:0,detail:win?"Ты угадал сторону монеты.":"Выпала другая сторона.",side};}
  case "roulette":{const n=ri(0,36),red=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n),color=n===0?"green":red?"red":"black",win=color===choice;return {label:String(n),caption:color==="green"?"ЗЕЛЁНОЕ ЗЕРО":color==="red"?"КРАСНОЕ":"ЧЁРНОЕ",mult:win?(choice==="green"?30:1.9):0,detail:"Шар остановился на "+n+". "+(win?"Твой сектор!":"Ставка не сыграла."),number:n,color};}
  case "mines":{const mines=Number(choice.slice(4)),safe=Math.random()<1-mines/9;return {label:safe?"БЕЗОПАСНО":"МИНА",caption:mines+" МИН · ПОЛЕ 3×3",mult:safe?({1:1.12,3:1.48,5:2.1}[mines]):0,detail:safe?"Ячейка открыта.":"Попалась мина.",safeIndex:ri(0,8),safe};}
- case "slots":{const symbols=["7","◆","●","★","BAR","♦"],a=symbols[ri(0,5)],b=symbols[ri(0,5)],c=symbols[ri(0,5)],triple=a===b&&b===c,pair=a===b||b===c||a===c,m=triple?(a==="7"?8:a==="BAR"?5:4):pair?1.4:0;return {label:a+"  "+b+"  "+c,caption:"ТРИ БАРАБАНА",mult:m,detail:triple?"Джекпот! Три одинаковых символа.":pair?"Два символа совпали.":"Комбинация не собрана.",symbols:[a,b,c]};}
+ case "slots":{const symbols=["7","◆","●","★","BAR","♦"],a=symbols[ri(0,5)],b=symbols[ri(0,5)],c=symbols[ri(0,5)],triple=a===b&&b===c,pair=a===b||b===c||a===c,eligible=choice==="any"?(triple||pair):triple&&(choice==="seven"?a==="7":a==="BAR"),m=eligible?(triple?(a==="7"?8:a==="BAR"?5:4):1.4):0;return {label:a+"  "+b+"  "+c,caption:"ТРИ БАРАБАНА",mult:m,detail:eligible?(triple?"Джекпот! Три одинаковых символа.":"Два символа совпали."):"Выбранная комбинация не собрана.",symbols:[a,b,c]};}
  case "plinko":{const sets={low:[.4,.5,.7,.8,1,1,1.2],medium:[0,.2,.4,.5,.8,1.5,3],high:[0,0,.1,.2,.5,1.5,4]},arr=sets[choice],m=arr[ri(0,arr.length-1)];return {label:"×"+m,caption:"ШАР ДОСТИГ НИЖНЕГО СЕКТОРА",mult:m,detail:"Шар прошёл через пегборд и попал в сектор ×"+m};}
  case "wheel":{const sectors=[{c:"blue",m:1.5},{c:"red",m:2},{c:"blue",m:.5},{c:"gold",m:5},{c:"red",m:0},{c:"blue",m:1},{c:"red",m:3},{c:"gold",m:0}],s=sectors[ri(0,7)],win=s.c===choice;return {label:"×"+s.m,caption:s.c.toUpperCase()+" СЕКТОР",mult:win?s.m:0,detail:"Колесо остановилось на секторе "+s.c+". "+(win?"Цвет совпал!":"Цвет не совпал."),color:s.c};}
  case "hilo":{const a=ri(2,14),b=ri(2,14),win=choice==="higher"?b>a:b<a;return {label:a+" → "+b,caption:"СЛЕДУЮЩАЯ КАРТА",mult:win?1.85:0,detail:"Первая карта "+a+", следующая "+b+". "+(win?"Ты угадал направление.":"Направление не угадано."),cardA:a,cardB:b};}
