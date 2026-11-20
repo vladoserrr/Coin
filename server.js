@@ -33,8 +33,11 @@ function cleanName(value) {
 const server = http.createServer(async (req, res) => {
   const pathname = decodeURIComponent((req.url || "/").split("?")[0]);
   if (pathname === "/api/leaderboard" && req.method === "GET") {
-    const players = Object.values(readPlayers()).sort((a,b) => b.score-a.score).slice(0, 100);
-    return send(res, 200, { players, total: Object.keys(readPlayers()).length });
+    const period = new URL(req.url, "http://localhost").searchParams.get("period") || "season";
+    const scoreKey = period === "daily" ? "dailyScore" : period === "weekly" ? "weeklyScore" : "score";
+    const all = Object.values(readPlayers()).map(player => ({ ...player, score: player[scoreKey] || 0 }));
+    const players = all.sort((a,b) => b.score-a.score).slice(0, 100);
+    return send(res, 200, { players, total: all.length, period });
   }
   if ((pathname === "/api/player" || pathname === "/api/score") && req.method === "POST") {
     try {
@@ -42,12 +45,21 @@ const server = http.createServer(async (req, res) => {
       const id = String(body.playerId || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
       if (!id) return send(res, 400, { error: "playerId required" });
       const players = readPlayers();
-      const player = players[id] || { id, nickname: "Игрок", score: 0, games: 0, wins: 0, createdAt: Date.now() };
+      const player = players[id] || { id, nickname: "Игрок", score: 0, dailyScore: 0, weeklyScore: 0, dailyKey: "", weeklyKey: "", games: 0, wins: 0, createdAt: Date.now() };
       player.nickname = cleanName(body.nickname || player.nickname);
       player.updatedAt = Date.now();
       if (pathname === "/api/score") {
         const points = Math.max(0, Math.min(1000000, Math.floor(Number(body.points) || 0)));
         player.score += points;
+        const now = new Date();
+        const dayKey = now.toISOString().slice(0, 10);
+        const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+        const weekKey = monday.toISOString().slice(0, 10);
+        if (player.dailyKey !== dayKey) { player.dailyKey = dayKey; player.dailyScore = 0; }
+        if (player.weeklyKey !== weekKey) { player.weeklyKey = weekKey; player.weeklyScore = 0; }
+        player.dailyScore += points;
+        player.weeklyScore += points;
         player.games += 1;
         if (body.won === true) player.wins += 1;
       }
