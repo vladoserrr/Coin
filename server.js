@@ -1,89 +1,51 @@
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
-const root = path.join(__dirname, "public");
-const dataDir = path.join(__dirname, "data");
-const dbFile = path.join(dataDir, "players.json");
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || "";
-const PORT = process.env.PORT || 8080;
-const MIME = {".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8",".svg":"image/svg+xml"};
-const MAX_ENERGY = 100;
-const ENERGY_REGEN_MS = 30000;
-const START_BALANCE = 0;
-const START_ENERGY = 100;
-const now = () => Date.now();
-function dbRead(){ try{return JSON.parse(fs.readFileSync(dbFile,"utf8"));}catch{return {players:{}, referrals:{}};} }
-function dbWrite(db){ fs.mkdirSync(dataDir,{recursive:true}); const tmp=dbFile+".tmp"; fs.writeFileSync(tmp,JSON.stringify(db,null,2)); fs.renameSync(tmp,dbFile); }
+const http=require("http"),https=require("https"),fs=require("fs"),path=require("path"),crypto=require("crypto");
+const root=path.join(__dirname,"public"),dataDir=path.join(__dirname,"data"),dbFile=path.join(dataDir,"players.json");
+const BOT_TOKEN=process.env.TELEGRAM_BOT_TOKEN||process.env.BOT_TOKEN||"",BOT_USERNAME=(process.env.BOT_USERNAME||"").replace(/^@/,""),PORT=process.env.PORT||8080,ADMIN="vladubrat7";
+const MIME={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8"};
+const now=()=>Date.now(),START_ENERGY=100;
+function dbRead(){try{return JSON.parse(fs.readFileSync(dbFile,"utf8"));}catch{return {players:{},referrals:{},promos:{}};}}
+function dbWrite(db){fs.mkdirSync(dataDir,{recursive:true});const tmp=dbFile+".tmp";fs.writeFileSync(tmp,JSON.stringify(db,null,2));fs.renameSync(tmp,dbFile);}
 function send(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type, X-Telegram-Init-Data","Access-Control-Allow-Methods":"GET,POST,OPTIONS"});res.end(JSON.stringify(data));}
 function body(req){return new Promise((resolve,reject)=>{let s="";req.on("data",c=>{s+=c;if(s.length>20000)reject(Error("Too large"));});req.on("end",()=>{try{resolve(JSON.parse(s||"{}"));}catch{reject(Error("Bad JSON"));}});req.on("error",reject);});}
-function clean(s,n=32){return String(s||"").replace(/[<>\u0000-\u001f]/g,"").trim().slice(0,n);}
-function telegramUser(initData){
- if(!BOT_TOKEN||!initData)return null;
- try{
-  const p=new URLSearchParams(initData),hash=p.get("hash");if(!hash)return null;p.delete("hash");
-  const check=[...p.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("\n");
-  const secret=crypto.createHmac("sha256","WebAppData").update(BOT_TOKEN).digest();
-  const expected=crypto.createHmac("sha256",secret).update(check).digest("hex");
-  const a=Buffer.from(hash,"hex"),b=Buffer.from(expected,"hex");if(a.length!==b.length||!crypto.timingSafeEqual(a,b))return null;
-  const authDate=Number(p.get("auth_date")||0);if(!authDate||now()/1000-authDate>86400)return null;
-  const u=JSON.parse(p.get("user")||"{}");if(!u.id)return null;
-  return {id:"tg_"+u.id,telegramId:String(u.id),name:clean([u.first_name,u.last_name].filter(Boolean).join(" "),32)||"Игрок",username:clean(u.username,32),photoUrl:/^https:\/\//.test(u.photo_url||"")?u.photo_url:""};
- }catch{return null;}
-}
-function maxEnergy(p){return MAX_ENERGY+Math.max(0,Number(p.upgrades?.capacity)||0)*20;}
-function regenMs(p){return Math.max(10000,ENERGY_REGEN_MS-Math.max(0,Number(p.upgrades?.regen)||0)*3000);}
-function regen(p){const t=now(),last=Number(p.energyAt||t),interval=regenMs(p),ticks=Math.floor((t-last)/interval);if(ticks>0){p.energy=Math.min(maxEnergy(p),Number(p.energy||0)+ticks);p.energyAt=last+ticks*interval;}p.energy=Math.min(maxEnergy(p),Number(p.energy||0));return p;}
-function publicPlayer(p){return {id:p.id,name:p.name,username:p.username,photoUrl:p.photoUrl||"",balance:p.balance,level:p.level,xp:p.xp,energy:p.energy,maxEnergy:maxEnergy(p),regenMs:regenMs(p),energyAt:p.energyAt,clickPower:p.clickPower,upgrades:p.upgrades,referralCode:p.referralCode,referrals:p.referrals||0,donuts:p.donuts||0};}
-function makePlayer(id,meta={}){return {id,name:meta.name||"Игрок",username:meta.username||"",photoUrl:meta.photoUrl||"",balance:START_BALANCE,level:1,xp:0,energy:START_ENERGY,energyAt:now(),clickPower:1,upgrades:{power:0,capacity:0,regen:0},referralCode:crypto.randomBytes(4).toString("hex").toUpperCase(),referrals:0,donuts:0,createdAt:now()};}
-function playerFor(db,user,guestId){const id=user?.id||("guest_"+String(guestId||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,48));if(!id||id==="guest_")return null;let p=db.players[id];if(!p){p=makePlayer(id,user||{});db.players[id]=p;}if(user){p.name=user.name||p.name;p.username=user.username||p.username;p.photoUrl=user.photoUrl||p.photoUrl;}regen(p);return p;}
-function upgradeCost(kind,level){const base={power:120,capacity:180,regen:240}[kind];return Math.floor(base*Math.pow(1.72,level));}
-const server=http.createServer(async(req,res)=>{
- const url=new URL(req.url,"http://localhost"),pathname=url.pathname;
- if(req.method==="OPTIONS"){res.writeHead(204,{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type, X-Telegram-Init-Data","Access-Control-Allow-Methods":"GET,POST,OPTIONS"});return res.end();}
- try{
-  if(pathname==="/api/state"&&req.method==="POST"){
-   const b=await body(req),user=telegramUser(b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});dbWrite(db);return send(res,200,{player:publicPlayer(p),telegram:!!user,botConfigured:!!BOT_TOKEN});
-  }
-  if(pathname==="/api/tap"&&req.method==="POST"){
-   const b=await body(req),user=telegramUser(req.headers["x-telegram-init-data"]||b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});
-   if(p.energy<1){dbWrite(db);return send(res,409,{error:"Нет энергии",player:publicPlayer(p)});}
-   const gain=Math.max(1,Number(p.clickPower)||1);p.energy-=1;p.balance+=gain;p.xp+=1;
-   const need=p.level*35;if(p.xp>=need){p.xp-=need;p.level+=1;}
-   dbWrite(db);return send(res,200,{gain,player:publicPlayer(p)});
-  }
-  if(pathname==="/api/upgrade"&&req.method==="POST"){
-   const b=await body(req),user=telegramUser(req.headers["x-telegram-init-data"]||b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});
-   const kind=String(b.kind||""),level=Number(p.upgrades[kind]);if(!["power","capacity","regen"].includes(kind))return send(res,400,{error:"Unknown upgrade"});
-   const cost=upgradeCost(kind,level);if(p.balance<cost)return send(res,409,{error:"Не хватает пончиков",player:publicPlayer(p),cost});
-   p.balance-=cost;p.upgrades[kind]++;
-   if(kind==="power")p.clickPower+=1;
-   if(kind==="capacity"){p.energy=Math.min(maxEnergy(p),p.energy+20);p.energyAt=now();}
-   if(kind==="regen"){p.energyAt=now();}
-   dbWrite(db);return send(res,200,{cost,player:publicPlayer(p)});
-  }
-  if(pathname==="/api/top"&&req.method==="GET"){
-   const db=dbRead(),all=Object.values(db.players).map(p=>{regen(p);return p;}).sort((a,b)=>b.balance-a.balance).slice(0,100);
-   dbWrite(db);return send(res,200,{players:all.map((p,i)=>({...publicPlayer(p),rank:i+1})),total:Object.keys(db.players).length});
-  }
-  if(pathname==="/api/referral"&&req.method==="POST"){
-   const b=await body(req),user=telegramUser(req.headers["x-telegram-init-data"]||b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});
-   const code=String(b.code||"").toUpperCase();if(!code)return send(res,400,{error:"Referral code missing"});
-   if(db.referrals[p.id])return send(res,409,{error:"Приглашение уже использовано"});
-   const inviter=Object.values(db.players).find(x=>x.referralCode===code);if(!inviter||inviter.id===p.id)return send(res,404,{error:"Код не найден"});
-   // Reward only after the invited account has reached level 3, preventing instant farming.
-   db.referrals[p.id]={inviter:inviter.id,createdAt:now(),paid:false};dbWrite(db);
-   return send(res,200,{ok:true,message:"Приглашение связано. Награда начислится после 3 уровня.",player:publicPlayer(p)});
-  }
-  if(pathname==="/api/profile"&&req.method==="POST"){
-   const b=await body(req),user=telegramUser(req.headers["x-telegram-init-data"]||b.initData),db=dbRead(),p=playerFor(db,user,b.playerId);if(!p)return send(res,400,{error:"playerId required"});
-   // Process pending referral once the new player reaches level 3.
-   if(p.level>=3&&db.referrals[p.id]&&!db.referrals[p.id].paid){const inviter=db.players[db.referrals[p.id].inviter];if(inviter){inviter.donuts=(inviter.donuts||0)+1;inviter.balance=(inviter.balance||0)+1;inviter.referrals=(inviter.referrals||0)+1;db.referrals[p.id].paid=true;}}
-   dbWrite(db);return send(res,200,{player:publicPlayer(p)});
-  }
-  if(pathname.startsWith("/api/"))return send(res,404,{error:"Not found"});
-  const file=path.resolve(root,pathname==="/"?"index.html":"."+pathname);if(!file.startsWith(root+path.sep)&&file!==root)return send(res,403,{error:"Forbidden"});
-  fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end("Not found");}res.writeHead(200,{"Content-Type":MIME[path.extname(file)]||"application/octet-stream","Cache-Control":"no-cache"});res.end(data);});
- }catch(e){send(res,400,{error:e.message||"Bad request"});}
+function clean(s,n=64){return String(s||"").replace(/[<>\u0000-\u001f]/g,"").trim().slice(0,n);}
+function telegramUser(data){if(!BOT_TOKEN||!data)return null;try{const p=new URLSearchParams(data),hash=p.get("hash");if(!hash)return null;p.delete("hash");const check=[...p.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>k+"="+v).join("\n");const secret=crypto.createHmac("sha256","WebAppData").update(BOT_TOKEN).digest(),expected=crypto.createHmac("sha256",secret).update(check).digest("hex"),a=Buffer.from(hash,"hex"),b=Buffer.from(expected,"hex");if(a.length!==b.length||!crypto.timingSafeEqual(a,b))return null;const auth=Number(p.get("auth_date")||0);if(!auth||now()/1000-auth>86400)return null;const u=JSON.parse(p.get("user")||"{}");if(!u.id)return null;return{id:"tg_"+u.id,telegramId:String(u.id),name:clean([u.first_name,u.last_name].filter(Boolean).join(" "),32)||"Игрок",username:clean(u.username,32),photoUrl:/^https:\/\//.test(u.photo_url||"")?u.photo_url:""};}catch{return null;}}
+function maxEnergy(p){return 100+Math.max(0,Number(p.upgrades?.capacity)||0)*20;}
+function regenMs(p){return 1000;}
+function regen(p){const t=now(),last=Number(p.energyAt||t),ticks=Math.floor((t-last)/1000);if(ticks>0){p.energy=Math.min(maxEnergy(p),Number(p.energy||0)+ticks);p.energyAt=last+ticks*1000;}p.energy=Math.min(maxEnergy(p),Number(p.energy||0));return p;}
+function publicPlayer(p){return{id:p.id,name:p.name,username:p.username,photoUrl:p.photoUrl||"",balance:p.balance,level:p.level,xp:p.xp,energy:p.energy,maxEnergy:maxEnergy(p),regenMs:1000,energyAt:p.energyAt,clickPower:p.clickPower,upgrades:p.upgrades,referralCode:p.referralCode,referrals:p.referrals||0,donuts:p.donuts||0,banned:!!p.banned};}
+function makePlayer(id,m={}){return{id,name:m.name||"Игрок",username:m.username||"",photoUrl:m.photoUrl||"",balance:0,level:1,xp:0,clicks:0,energy:START_ENERGY,energyAt:now(),clickPower:1,upgrades:{power:0,capacity:0,regen:0,critical:0,bonus:0,discount:0,fortune:0},referralCode:crypto.randomBytes(4).toString("hex").toUpperCase(),referrals:0,donuts:0,createdAt:now()};}
+function playerFor(db,user,gid){const id=user?.id||("guest_"+String(gid||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,48));if(!id||id==="guest_")return null;let p=db.players[id];if(!p){p=makePlayer(id,user||{});db.players[id]=p;}if(user){p.name=user.name||p.name;p.username=user.username||p.username;p.photoUrl=user.photoUrl||p.photoUrl;}regen(p);return p;}
+function upgradeCost(kind,level){const base={power:120,capacity:180,regen:240,critical:420,bonus:650,discount:900,fortune:1300}[kind];return Math.floor(base*Math.pow(1.72,level));}
+function auth(req,b){return telegramUser(req.headers["x-telegram-init-data"]||b?.initData);}
+function admin(user){return !!user&&String(user.username||"").toLowerCase()===ADMIN;}
+function isBanned(p){return !!p?.banned;}
+function rankValue(p){return p.balance||0;}
+function card(){const r=["A","2","3","4","5","6","7","8","9","10","J","Q","K"][Math.floor(Math.random()*13)],s=["♠","♥","♦","♣"][Math.floor(Math.random()*4)];return{r,s,v:r==="A"?11:["J","Q","K"].includes(r)?10:Number(r)};}
+function score(cards){let n=cards.reduce((a,c)=>a+c.v,0),aces=cards.filter(c=>c.r==="A").length;while(n>21&&aces-- >0)n-=10;return n;}
+function telegram(method,payload){return new Promise(resolve=>{if(!BOT_TOKEN)return resolve(false);const data=JSON.stringify(payload),req=https.request({hostname:"api.telegram.org",path:"/bot"+BOT_TOKEN+"/"+method,method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(data)}},r=>{let s="";r.on("data",c=>s+=c);r.on("end",()=>resolve(r.statusCode===200));});req.on("error",()=>resolve(false));req.write(data);req.end();});}
+const server=http.createServer(async(req,res)=>{const url=new URL(req.url,"http://localhost"),route=url.pathname;if(req.method==="OPTIONS"){res.writeHead(204,{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type, X-Telegram-Init-Data","Access-Control-Allow-Methods":"GET,POST,OPTIONS"});return res.end();}
+try{
+if(route==="/api/state"&&req.method==="POST"){const b=await body(req),u=auth(req,b),db=dbRead(),p=playerFor(db,u,b.playerId);if(!p)return send(res,400,{error:"playerId required"});if(isBanned(p))return send(res,403,{error:"Аккаунт заблокирован"});dbWrite(db);return send(res,200,{player:publicPlayer(p),telegram:!!u,admin:admin(u),botConfigured:!!BOT_TOKEN,botUsername:BOT_USERNAME});}
+if(route==="/api/tap"&&req.method==="POST"){const b=await body(req),u=auth(req,b),db=dbRead(),p=playerFor(db,u,b.playerId);if(!p)return send(res,400,{error:"playerId required"});if(isBanned(p))return send(res,403,{error:"Аккаунт заблокирован"});if(p.energy<1)return send(res,409,{error:"Нет энергии",player:publicPlayer(p)});const gain=Math.max(1,Number(p.clickPower)||1);p.energy--;p.balance+=gain;p.clicks=(p.clicks||0)+1;p.xp=(p.xp||0)+1;if(p.xp>=50){p.xp-=50;p.level++;}dbWrite(db);return send(res,200,{gain,player:publicPlayer(p)});}
+if(route==="/api/upgrade"&&req.method==="POST"){const b=await body(req),u=auth(req,b),db=dbRead(),p=playerFor(db,u,b.playerId);if(!p||isBanned(p))return send(res,403,{error:"Нет доступа"});const k=String(b.kind||"");if(!Object.hasOwn(p.upgrades,k))return send(res,400,{error:"Неизвестное улучшение"});const cost=upgradeCost(k,p.upgrades[k]);if(p.balance<cost)return send(res,409,{error:"Не хватает пончиков",player:publicPlayer(p)});p.balance-=cost;p.upgrades[k]++;if(k==="power")p.clickPower++;if(k==="capacity")p.energy=Math.min(maxEnergy(p),p.energy+20);if(k==="regen")p.energyAt=now();dbWrite(db);return send(res,200,{player:publicPlayer(p)});}
+if(route==="/api/top"&&req.method==="GET"){const db=dbRead(),all=Object.values(db.players).filter(p=>!p.banned).map(p=>{regen(p);return p;}).sort((a,b)=>rankValue(b)-rankValue(a)).slice(0,100);dbWrite(db);return send(res,200,{players:all.map((p,i)=>({...publicPlayer(p),rank:i+1})),total:all.length});}
+if(route==="/api/profile"&&req.method==="POST"){const b=await body(req),u=auth(req,b),db=dbRead(),p=playerFor(db,u,b.playerId);if(!p)return send(res,400,{error:"playerId required"});if(p.level>=3&&db.referrals[p.id]&&!db.referrals[p.id].paid){const inv=db.players[db.referrals[p.id].inviter];if(inv){inv.balance++;inv.donuts=(inv.donuts||0)+1;inv.referrals=(inv.referrals||0)+1;db.referrals[p.id].paid=true;}}dbWrite(db);return send(res,200,{player:publicPlayer(p)});}
+if(route==="/api/referral"&&req.method==="POST"){const b=await body(req),u=auth(req,b),db=dbRead(),p=playerFor(db,u,b.playerId);if(!p)return send(res,400,{error:"playerId required"});const code=clean(b.code,32).toUpperCase();if(db.referrals[p.id])return send(res,409,{error:"Реферальный код уже использован"});const inv=Object.values(db.players).find(x=>x.referralCode===code);if(!inv||inv.id===p.id)return send(res,404,{error:"Реф-код не найден"});db.referrals[p.id]={inviter:inv.id,createdAt:now(),paid:false};dbWrite(db);return send(res,200,{message:"Код принят. Награда начислится после 3 уровня."});}
+if(route==="/api/promo"&&req.method==="POST"){const b=await body(req),db=dbRead(),p=playerFor(db,auth(req,b),b.playerId);if(!p)return send(res,400,{error:"playerId required"});const code=clean(b.code,32).toUpperCase(),promo=db.promos[code];if(!promo||promo.active===false)return send(res,404,{error:"Промокод не найден"});promo.used=promo.used||[];if(promo.used.includes(p.id))return send(res,409,{error:"Ты уже активировал этот промокод"});if(promo.limit>0&&promo.used.length>=promo.limit)return send(res,409,{error:"Лимит активаций исчерпан"});promo.used.push(p.id);p.balance+=promo.amount;dbWrite(db);return send(res,200,{player:publicPlayer(p),message:"Промокод активирован: +"+promo.amount+" пончиков"});}
+if(route==="/api/transfer"&&req.method==="POST"){const b=await body(req),db=dbRead(),p=playerFor(db,auth(req,b),b.playerId);if(!p)return send(res,400,{error:"playerId required"});const amount=Math.floor(Number(b.amount)),target=Object.values(db.players).find(x=>x.id===String(b.to||"").trim()||String(x.username||"").toLowerCase()===String(b.to||"").replace(/^@/,"").toLowerCase());if(!target||target.id===p.id)return send(res,404,{error:"Игрок не найден"});if(!Number.isFinite(amount)||amount<1||amount>p.balance)return send(res,400,{error:"Проверь сумму перевода"});p.balance-=amount;target.balance+=amount;dbWrite(db);return send(res,200,{player:publicPlayer(p),message:"Переведено "+amount+" пончиков игроку "+target.name});}
+if(route==="/api/game/start"&&req.method==="POST"){const b=await body(req),db=dbRead(),p=playerFor(db,auth(req,b),b.playerId);if(!p)return send(res,400,{error:"playerId required"});if(p.game&&!p.game.done)return send(res,409,{error:"Сначала закончи текущий раунд"});const bet=Math.floor(Number(b.bet)),choice=String(b.choice||"player");if(!Number.isFinite(bet)||bet<1||bet>p.balance||!["player","dealer","draw"].includes(choice))return send(res,400,{error:"Проверь ставку и исход"});p.balance-=bet;p.game={bet,choice,player:[card(),card()],dealer:[card(),card()],done:false};const ps=score(p.game.player);if(ps===21){p.game.done=true;finishGame(p);}dbWrite(db);return send(res,200,{player:publicPlayer(p),game:p.game});}
+if(route==="/api/game/hit"&&req.method==="POST"){const b=await body(req),db=dbRead(),p=playerFor(db,auth(req,b),b.playerId);if(!p?.game||p.game.done)return send(res,409,{error:"Нет активного раунда"});p.game.player.push(card());if(score(p.game.player)>=21){if(score(p.game.player)>21){p.game.done=true;finishGame(p);}else{while(score(p.game.dealer)<17)p.game.dealer.push(card());p.game.done=true;finishGame(p);}}dbWrite(db);return send(res,200,{player:publicPlayer(p),game:p.game});}
+if(route==="/api/game/stand"&&req.method==="POST"){const b=await body(req),db=dbRead(),p=playerFor(db,auth(req,b),b.playerId);if(!p?.game||p.game.done)return send(res,409,{error:"Нет активного раунда"});while(score(p.game.dealer)<17)p.game.dealer.push(card());p.game.done=true;finishGame(p);dbWrite(db);return send(res,200,{player:publicPlayer(p),game:p.game});}
+if(route.startsWith("/api/admin/")&&req.method==="POST"){const b=await body(req),u=auth(req,b);if(!admin(u))return send(res,403,{error:"Доступ только для администратора"});const db=dbRead();
+if(route==="/api/admin/promo"){const code=clean(b.code,24).toUpperCase(),amount=Math.floor(Number(b.amount)),limit=Math.floor(Number(b.limit)||0);if(!code||amount<1)return send(res,400,{error:"Укажи код и награду"});db.promos[code]={amount,limit,used:[],active:true,createdAt:now()};dbWrite(db);return send(res,200,{message:"Промокод "+code+" создан"});}
+if(route==="/api/admin/balance"){const target=findTarget(db,b.to);if(!target)return send(res,404,{error:"Игрок не найден"});const amount=Math.floor(Number(b.amount));if(!amount)return send(res,400,{error:"Неверная сумма"});target.balance=Math.max(0,target.balance+(route.endsWith("balance")&&b.action==="remove"?-Math.abs(amount):Math.abs(amount)));dbWrite(db);return send(res,200,{message:"Баланс обновлён"});}
+if(route==="/api/admin/ban"){const target=findTarget(db,b.to);if(!target)return send(res,404,{error:"Игрок не найден"});target.banned=!!b.banned;dbWrite(db);return send(res,200,{message:target.banned?"Игрок заблокирован":"Блокировка снята"});}
+if(route==="/api/admin/broadcast"){const msg=clean(b.message,3500);if(!msg)return send(res,400,{error:"Текст пуст"});const ids=Object.values(db.players).filter(x=>x.telegramId||x.id.startsWith("tg_")).map(x=>x.telegramId||x.id.slice(3));let sent=0;for(const id of ids){if(await telegram("sendMessage",{chat_id:id,text:msg}))sent++;}return send(res,200,{message:"Рассылка отправлена: "+sent+" из "+ids.length});}}
+if(route==="/api/withdraw-info"&&req.method==="GET")return send(res,200,{message:"Вывод пока не подключён. Следи за новостями в канале — там объявим дату запуска."});
+if(route.startsWith("/api/"))return send(res,404,{error:"Not found"});
+const file=path.resolve(root,route==="/"?"index.html":"."+route);if(!file.startsWith(root+path.sep)&&file!==root)return send(res,403,{error:"Forbidden"});fs.readFile(file,(e,data)=>{if(e){res.writeHead(404);return res.end("Not found");}res.writeHead(200,{"Content-Type":MIME[path.extname(file)]||"application/octet-stream","Cache-Control":"no-cache"});res.end(data);});
+}catch(e){send(res,400,{error:e.message||"Bad request"});}
 });
+function finishGame(p){const g=p.game,ps=score(g.player),ds=score(g.dealer);g.playerScore=ps;g.dealerScore=ds;g.result=ps>21?"bust":ds>21||ps>ds?"player":ps<ds?"dealer":"draw";const won=g.choice===g.result;if(won)p.balance+=g.bet*(g.result==="draw"?2:2);g.payout=won?g.bet*2:0;}
+function findTarget(db,to){const s=String(to||"").replace(/^@/,"").toLowerCase();return Object.values(db.players).find(p=>p.id===String(to)||String(p.username||"").toLowerCase()===s);}
 server.listen(PORT,"0.0.0.0",()=>console.log("Donut Clicker listening on "+PORT));
