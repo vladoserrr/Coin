@@ -150,7 +150,7 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
 .game-options{margin:20px 0 4px;padding:17px;border:1px solid #ffffff20;border-radius:18px;background:linear-gradient(135deg,#ffffff0b,#0e1b2a88)}
 .choice-heading{font-size:12px;font-weight:850;letter-spacing:.5px;color:#eaf1fa;margin-bottom:12px}
 .choice-list{display:flex;gap:8px;flex-wrap:wrap}
-.choice-btn{border:1px solid #ffffff25;background:#1a2a3d;color:#dce7f4;border-radius:12px;padding:11px 14px;font:700 12px inherit;cursor:pointer;transition:.2s}
+.choice-btn{border:1px solid #ffffff25;background:#1a2a3d;color:#dce7f4;border-radius:12px;padding:11px 14px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
 .choice-btn.selected{background:linear-gradient(135deg,#f5d88d,#dcae55);border-color:#ffe5a9;color:#24202a;box-shadow:0 5px 18px #e9c16a30}
 .choice-hint{font-size:10px;color:#91a5bd;margin-top:10px}
 #gameDisplay{min-height:245px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden}
@@ -169,6 +169,6 @@ body{background:radial-gradient(ellipse at 50% -20%,#30425b 0,#182231 42%,#11172
 @keyframes diceRoll{to{transform:rotateX(230deg) rotateY(170deg) translateY(-15px)}}@keyframes coinFlip{to{transform:rotateY(900deg)}}@keyframes wheelSpin{to{transform:rotate(1440deg)}}@keyframes slotRoll{to{transform:translateY(-8px);filter:blur(2px)}}@keyframes plinkoBounce{to{transform:translate(34px,140px)}}@keyframes crashRise{to{transform:translateY(-8px)}}@keyframes needleSpin{to{transform:rotate(400deg)}}
 @media(max-width:520px){.choice-btn{flex:1 1 calc(33.33% - 8px);padding:10px 7px;font-size:11px}.slot-reel{width:60px;height:75px}.wheel-disc{width:160px;height:160px}}
 
-.roulette-disc{background:conic-gradient(#13835d 0 9.7deg,#b72f43 9.7deg 19.4deg,#17263d 19.4deg 29.1deg,#b72f43 29.1deg 38.8deg,#17263d 38.8deg 48.5deg,#b72f43 48.5deg 58.2deg,#17263d 58.2deg 67.9deg,#b72f43 67.9deg 77.6deg,#17263d 77.6deg 360deg)}
+.roulette-disc{background:conic-gradient(#13835d 0 9.73deg,transparent 9.73deg),repeating-conic-gradient(#b72f43 0 9.73deg,#17263d 9.73deg 19.46deg)}
 .prize-disc{background:conic-gradient(#245b91 0 45deg,#b72f43 45deg 90deg,#245b91 90deg 135deg,#d5a64e 135deg 180deg,#b72f43 180deg 225deg,#245b91 225deg 270deg,#b72f43 270deg 315deg,#d5a64e 315deg)}
 .tile-board span.danger{background:linear-gradient(145deg,#b84a4a,#632d3b);color:#fff}
