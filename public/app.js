@@ -18,7 +18,7 @@ function render(){
  $("powerLevel").textContent=state.upgrades.power;$("capacityLevel").textContent=state.upgrades.capacity;$("regenLevel").textContent=state.upgrades.regen;
  for(const k of Object.keys(costs)){const cost=Math.floor(costs[k]*Math.pow(1.72,state.upgrades[k]));$(""+k+"Cost").textContent=fmt(cost);document.querySelector('[data-upgrade="'+k+'"]').disabled=state.balance<cost;}
  $("referralCode").textContent=state.referralCode||"—";
- $("energyTimer").textContent=state.energy>=state.maxEnergy?"Полная":"+1 через 30 сек.";
+ $("energyTimer").textContent=state.energy>=state.maxEnergy?"Полная":"+1 каждые "+Math.round(state.regenMs/1000)+" сек.";
 }
 async function load(){try{const d=await api("/api/state",{initData:tg?.initData||""});setState(d.player);if(telegram&&!d.telegram)toast("Открой приложение из меню Telegram-бота");}catch(e){toast(e.message);}}
 function feedback(gain){const f=$("tapFeedback");f.textContent="+"+fmt(gain)+" 🍩";f.classList.remove("pop");void f.offsetWidth;f.classList.add("pop");const btn=$("tapButton");btn.classList.add("pressed");clearTimeout(feedback.timer);feedback.timer=setTimeout(()=>btn.classList.remove("pressed"),115);}
