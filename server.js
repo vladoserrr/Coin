@@ -1,10 +1,27 @@
 const http=require("http"),https=require("https"),fs=require("fs"),path=require("path"),crypto=require("crypto");
-const root=path.join(__dirname,"public"),dataDir=path.join(__dirname,"data"),dbFile=path.join(dataDir,"players.json");
+const root=path.join(__dirname,"public"),dataDir=process.env.DATA_DIR||path.join(__dirname,"data"),dbFile=path.join(dataDir,"players.json");
 const BOT_TOKEN=process.env.TELEGRAM_BOT_TOKEN||process.env.BOT_TOKEN||"",BOT_USERNAME=(process.env.BOT_USERNAME||"").replace(/^@/,""),PORT=process.env.PORT||8080,ADMIN="vladubrat7";
 const MIME={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8"};
 const now=()=>Date.now(),START_ENERGY=100,WEBHOOK_SECRET=process.env.TELEGRAM_WEBHOOK_SECRET||(BOT_TOKEN?crypto.createHash("sha256").update(BOT_TOKEN+"donut-webhook").digest("hex").slice(0,40):"");
-function dbRead(){try{return JSON.parse(fs.readFileSync(dbFile,"utf8"));}catch{return {players:{},referrals:{},promos:{},bonusLinks:{}};}}
-function dbWrite(db){fs.mkdirSync(dataDir,{recursive:true});const tmp=dbFile+".tmp";fs.writeFileSync(tmp,JSON.stringify(db,null,2));fs.renameSync(tmp,dbFile);}
+const emptyDb=()=>({players:{},referrals:{},promos:{},bonusLinks:{}});
+function readDbFile(file){try{const d=JSON.parse(fs.readFileSync(file,"utf8"));if(d&&d.players&&typeof d.players==="object")return d;}catch{}return null;}
+function dbRead(){
+  const files=[dbFile,dbFile+".bak",dbFile+".backup","/app/data/players.json","/app/data/players.json.bak","/data/players.json","/data/players.json.bak",path.join(__dirname,"players.json"),path.join(process.cwd(),"data","players.json"),path.join(process.cwd(),"players.json")];
+  const found=[];for(const f of [...new Set(files)]){const d=readDbFile(f);if(d)found.push({file:f,db:d,count:Object.keys(d.players||{}).length});}
+  if(!found.length)return emptyDb();
+  found.sort((a,b)=>b.count-a.count);
+  const chosen=found[0].db,merged={...emptyDb(),...chosen,players:{...(chosen.players||{})}};
+  for(const item of found.slice(1)){for(const [id,p] of Object.entries(item.db.players||{})){const old=merged.players[id];if(!old||Number(p.lastActive||p.createdAt||0)>Number(old.lastActive||old.createdAt||0))merged.players[id]=p;}}
+  for(const key of ["referrals","promos","bonusLinks"])for(const item of found){merged[key]={...(item.db[key]||{}),...(merged[key]||{})};}
+  return merged;
+}
+function dbWrite(db){
+  fs.mkdirSync(dataDir,{recursive:true});
+  const current=readDbFile(dbFile),incoming=Object.keys(db.players||{}).length;
+  if(current&&Object.keys(current.players||{}).length>incoming){db={...db,...current,players:{...(db.players||{}),...(current.players||{})}};}
+  if(current&&Object.keys(current.players||{}).length)fs.copyFileSync(dbFile,dbFile+".bak");
+  const tmp=dbFile+".tmp";fs.writeFileSync(tmp,JSON.stringify(db,null,2));fs.renameSync(tmp,dbFile);
+}
 function send(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type, X-Telegram-Init-Data","Access-Control-Allow-Methods":"GET,POST,OPTIONS"});res.end(JSON.stringify(data));}
 function body(req){return new Promise((resolve,reject)=>{let s="";req.on("data",c=>{s+=c;if(s.length>20000)reject(Error("Too large"));});req.on("end",()=>{try{resolve(JSON.parse(s||"{}"));}catch{reject(Error("Bad JSON"));}});req.on("error",reject);});}
 function clean(s,n=64){return String(s||"").replace(/[<>\u0000-\u001f]/g,"").trim().slice(0,n);}
