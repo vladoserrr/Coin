@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "description": "Donut Clicker — light Telegram mini app",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
 }
