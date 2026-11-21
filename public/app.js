@@ -21,6 +21,7 @@ function showPage(name){document.querySelectorAll(".page").forEach(p=>p.classLis
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
 
 $("openDeveloper").addEventListener("click",()=>showPage("developer"));
+$("openCasino").addEventListener("click",async()=>{const b=$("openCasino");b.disabled=true;try{const d=await api("/api/catalog");const url=String(d.casinoUrl||"").trim();if(!url){toast("Добавь DIME_CASINO_URL в Variables проекта Coin в Railway");return;}if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?(?:\/.*)?$/i.test(url)){toast("DIME_CASINO_URL должен быть публичной HTTPS-ссылкой");return;}if(tg?.openLink)tg.openLink(url);else window.location.assign(url);}catch(e){toast(e.message||"Не удалось открыть казино");}finally{b.disabled=false;}});
 $("backFromDeveloper").addEventListener("click",()=>showPage("more"));
 $("apiBaseUrl").textContent=location.origin;
 async function loadDeveloperKeys(){const box=$("apiKeyList");box.innerHTML="<div class=loading>Загружаем ключи…</div>";try{const d=await api("/api/developer/keys");box.innerHTML=d.keys.length?d.keys.map(k=>"<div class='upgrade-card'><div class='upgrade-info'><b>"+escapeHtml(k.name)+"</b><small>"+escapeHtml(k.prefix)+"… · "+new Date(k.createdAt).toLocaleDateString("ru-RU")+(k.revoked?" · отозван":"")+"</small></div><button class='danger' data-revoke-api='"+escapeHtml(k.id)+"' "+(k.revoked?"disabled":"")+">"+(k.revoked?"Отозван":"Отозвать")+"</button></div>").join(""):"<p>Пока нет API-ключей.</p>";}catch(e){box.textContent=e.message;}}
