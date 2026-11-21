@@ -5,7 +5,7 @@ const MIME={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",
 const now=()=>Date.now(),START_ENERGY=100,WEBHOOK_SECRET=process.env.TELEGRAM_WEBHOOK_SECRET||(BOT_TOKEN?crypto.createHash("sha256").update(BOT_TOKEN+"donut-webhook").digest("hex").slice(0,40):"");
 const emptyDb=()=>({players:{},referrals:{},promos:{},bonusLinks:{},botUsers:{},apiKeys:{},apiTransactions:{}});
 function readDbFile(file){try{const d=JSON.parse(fs.readFileSync(file,"utf8"));if(d&&d.players&&typeof d.players==="object")return d;}catch{}return null;}
-function dbRead(){
+function legacyDbRead(){
   const files=[dbFile,dbFile+".bak",dbFile+".backup","/app/data/players.json","/app/data/players.json.bak","/data/players.json","/data/players.json.bak",path.join(__dirname,"players.json"),path.join(process.cwd(),"data","players.json"),path.join(process.cwd(),"players.json")];
   const found=[];for(const f of [...new Set(files)]){const d=readDbFile(f);if(d)found.push({file:f,db:d,count:Object.keys(d.players||{}).length});}
   if(!found.length)return emptyDb();
@@ -15,12 +15,42 @@ function dbRead(){
   for(const key of ["referrals","promos","bonusLinks"])for(const item of found){merged[key]={...(item.db[key]||{}),...(merged[key]||{})};}
   return merged;
 }
-function dbWrite(db){
-  fs.mkdirSync(dataDir,{recursive:true});
-  const current=readDbFile(dbFile),incoming=Object.keys(db.players||{}).length;
-  if(current&&Object.keys(current.players||{}).length>incoming){db={...db,...current,players:{...(db.players||{}),...(current.players||{})}};}
+fs.mkdirSync(dataDir,{recursive:true});
+const Database=require("better-sqlite3");
+const sqlite=new Database(path.join(dataDir,"ponchik.sqlite"));
+sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("synchronous = FULL");
+sqlite.exec("CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL, updated_at INTEGER NOT NULL)");
+const saveSqlite=sqlite.prepare("INSERT INTO app_state (id,payload,updated_at) VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at");
+function mirrorLegacyDb(db){
+  const current=readDbFile(dbFile);
   if(current&&Object.keys(current.players||{}).length)fs.copyFileSync(dbFile,dbFile+".bak");
-  const tmp=dbFile+".tmp";fs.writeFileSync(tmp,JSON.stringify(db,null,2));fs.renameSync(tmp,dbFile);
+  const tmp=dbFile+".tmp";
+  fs.writeFileSync(tmp,JSON.stringify(db,null,2));
+  fs.renameSync(tmp,dbFile);
+}
+function dbRead(){
+  const row=sqlite.prepare("SELECT payload FROM app_state WHERE id=1").get();
+  if(!row){
+    const recovered=legacyDbRead();
+    saveSqlite.run(JSON.stringify(recovered),now());
+    return recovered;
+  }
+  let db;
+  try{db=JSON.parse(row.payload);}catch{db=emptyDb();}
+  db={...emptyDb(),...db,players:{...(db.players||{})}};
+  const legacy=legacyDbRead();
+  let changed=false;
+  for(const [id,p] of Object.entries(legacy.players||{})){
+    if(!db.players[id]){db.players[id]=p;changed=true;}
+  }
+  if(changed)saveSqlite.run(JSON.stringify(db),now());
+  return db;
+}
+function dbWrite(db){
+  const commit=sqlite.transaction(()=>saveSqlite.run(JSON.stringify(db),now()));
+  commit();
+  mirrorLegacyDb(db);
 }
 function send(res,status,data){res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type, X-Telegram-Init-Data, Authorization, X-Idempotency-Key","Access-Control-Allow-Methods":"GET,POST,OPTIONS"});res.end(JSON.stringify(data));}
 function body(req){return new Promise((resolve,reject)=>{let s="";req.on("data",c=>{s+=c;if(s.length>20000)reject(Error("Too large"));});req.on("end",()=>{try{resolve(JSON.parse(s||"{}"));}catch{reject(Error("Bad JSON"));}});req.on("error",reject);});}
@@ -45,7 +75,6 @@ try{
 
 if(route==="/api/developer/keys"&&(req.method==="GET"||req.method==="POST"||req.method==="DELETE")){const b=req.method==="GET"?{}:await body(req),u=auth(req,b);if(!u)return send(res,401,{error:"Войди через Telegram, чтобы управлять API-ключами"});const db=dbRead(),p=playerFor(db,u,b.playerId);if(!p||isBanned(p))return send(res,403,{error:"Нет доступа"});db.apiKeys=db.apiKeys||{};if(req.method==="GET"){const keys=Object.values(db.apiKeys).filter(k=>k.owner===p.id).map(k=>({id:k.id,name:k.name,prefix:k.prefix,createdAt:k.createdAt,lastUsedAt:k.lastUsedAt||null,revoked:!!k.revoked}));return send(res,200,{keys});}if(req.method==="DELETE"||b.action==="revoke"){const k=db.apiKeys[String(b.id||"")];if(!k||k.owner!==p.id)return send(res,404,{error:"Ключ не найден"});k.revoked=true;k.revokedAt=now();dbWrite(db);return send(res,200,{message:"API-ключ отозван"});}const owned=Object.values(db.apiKeys).filter(k=>k.owner===p.id&&!k.revoked);if(owned.length>=10)return send(res,409,{error:"Можно создать не более 10 активных ключей"});const name=clean(b.name||"Мой проект",40)||"Мой проект",id=crypto.randomBytes(8).toString("hex"),secret="pn_live_"+crypto.randomBytes(32).toString("hex");db.apiKeys[id]={id,owner:p.id,name,prefix:secret.slice(0,15),hash:crypto.createHash("sha256").update(secret).digest("hex"),createdAt:now(),lastUsedAt:null,revoked:false};dbWrite(db);return send(res,200,{message:"Ключ создан. Скопируй его сейчас — повторно показать секрет нельзя.",key:secret,id});}
 if(route==="/api/v1/transfer"&&req.method==="POST"){const token=String(req.headers.authorization||"").replace(/^Bearer\s+/i,"").trim();if(!token)return send(res,401,{error:"Передай API-ключ в заголовке Authorization: Bearer"});const b=await body(req),hash=crypto.createHash("sha256").update(token).digest("hex"),db=dbRead(),key=Object.values(db.apiKeys||{}).find(k=>!k.revoked&&k.hash===hash);if(!key)return send(res,401,{error:"Неверный или отозванный API-ключ"});const fromId=String(b.from_telegram_id||"").replace(/\D/g,""),toId=String(b.to_telegram_id||"").replace(/\D/g,""),from=db.players["tg_"+fromId],to=db.players["tg_"+toId],amount=Math.floor(Number(b.amount)),reference=clean(req.headers["x-idempotency-key"]||b.reference,100),description=clean(b.description||"Перевод между счетами",120);if(!fromId||!toId||fromId===toId||!from||!to||from.banned||to.banned)return send(res,404,{error:"Один из пользователей не найден или недоступен"});if(!Number.isSafeInteger(amount)||amount<1||amount>1000000||reference.length<8)return send(res,400,{error:"Нужны целая сумма 1–1000000 и уникальный reference длиной от 8 символов"});db.apiTransactions=db.apiTransactions||{};const txId=key.id+":"+reference;if(db.apiTransactions[txId])return send(res,200,{...db.apiTransactions[txId],replayed:true});if((Number(from.balance)||0)<amount)return send(res,409,{error:"Недостаточно пончиков на счёте отправителя",balance:Number(from.balance)||0});from.balance=(Number(from.balance)||0)-amount;to.balance=(Number(to.balance)||0)+amount;const result={transactionId:txId,type:"transfer",amount,fromTelegramId:fromId,toTelegramId:toId,fromBalance:from.balance,toBalance:to.balance,currency:"DONUT",description,createdAt:now()};db.apiTransactions[txId]=result;key.lastUsedAt=now();dbWrite(db);return send(res,200,result);}
-if(route==="/api/catalog"&&req.method==="GET")return send(res,200,{casinoUrl:String(process.env.DIME_CASINO_URL||"").trim()});
 if(route==="/api/v1/balance"&&req.method==="GET"){const token=String(req.headers.authorization||"").replace(/^Bearer\s+/i,"").trim();if(!token)return send(res,401,{error:"Передай API-ключ в заголовке Authorization: Bearer"});const hash=crypto.createHash("sha256").update(token).digest("hex"),db=dbRead(),key=Object.values(db.apiKeys||{}).find(k=>!k.revoked&&k.hash===hash);if(!key)return send(res,401,{error:"Неверный или отозванный API-ключ"});const telegramId=String(url.searchParams.get("telegram_id")||"").replace(/\D/g,""),p=telegramId?db.players["tg_"+telegramId]:db.players[key.owner];if(!p||p.banned)return send(res,404,{error:"Пользователь не найден или недоступен"});key.lastUsedAt=now();dbWrite(db);return send(res,200,{currency:"DONUT",balance:Number(p.balance)||0,user:p.id});}
 if(route==="/api/v1/transactions"&&req.method==="POST"){const token=String(req.headers.authorization||"").replace(/^Bearer\s+/i,"").trim();if(!token)return send(res,401,{error:"Передай API-ключ в заголовке Authorization: Bearer"});const b=await body(req),hash=crypto.createHash("sha256").update(token).digest("hex"),db=dbRead(),key=Object.values(db.apiKeys||{}).find(k=>!k.revoked&&k.hash===hash);if(!key)return send(res,401,{error:"Неверный или отозванный API-ключ"});const telegramId=String(b.telegram_id||"").replace(/\D/g,""),p=telegramId?db.players["tg_"+telegramId]:db.players[key.owner];if(!p||p.banned)return send(res,404,{error:"Пользователь не найден или недоступен"});const type=String(b.type||""),amount=Math.floor(Number(b.amount)),reference=clean(req.headers["x-idempotency-key"]||b.reference,100),description=clean(b.description||"Операция стороннего проекта",120);if(!["credit","debit"].includes(type)||!Number.isSafeInteger(amount)||amount<1||amount>1000000||reference.length<8)return send(res,400,{error:"Нужны type=credit/debit, целая сумма 1–1000000 и уникальный reference длиной от 8 символов"});db.apiTransactions=db.apiTransactions||{};const txId=key.id+":"+reference;if(db.apiTransactions[txId])return send(res,200,{...db.apiTransactions[txId],replayed:true});if(type==="debit"&&Number(p.balance)<amount)return send(res,409,{error:"Недостаточно пончиков",balance:Number(p.balance)||0});p.balance=Math.max(0,(Number(p.balance)||0)+(type==="credit"?amount:-amount));const result={transactionId:txId,type,amount,balance:p.balance,currency:"DONUT",description,createdAt:now()};db.apiTransactions[txId]=result;key.lastUsedAt=now();dbWrite(db);return send(res,200,result);}
 
