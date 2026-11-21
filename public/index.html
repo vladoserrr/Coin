@@ -36,7 +36,16 @@ Content-Type: application/json
   "amount": 50,
   "reference": "order-2026-0001",
   "description": "Награда за заказ"
-}</pre><p>Для списания укажи <code>"type": "debit"</code>. Сумма — целое число от 1 до 1 000 000. Каждый reference должен быть уникальным для проекта: повтор запроса с тем же reference не спишет и не начислит пончики второй раз.</p><p><b>Важно:</b> ключ принадлежит твоему проекту. Без telegram_id операция работает с твоим балансом; с telegram_id — с балансом указанного игрока, который уже зарегистрирован в боте Пончик. Это позволяет использовать пончики как валюту в стороннем проекте. Доступ к балансам игроков — доверенная привилегия: храни ключ только на сервере, не вставляй его в публичный JavaScript или мобильное приложение. При утечке немедленно отзови ключ.</p></div><button class="more-action" id="backFromDeveloper">← Вернуться в «Ещё»</button></section>
+}</pre><p>Для списания укажи <code>"type": "debit"</code>. Сумма — целое число от 1 до 1 000 000. Каждый reference должен быть уникальным для проекта: повтор запроса с тем же reference не спишет и не начислит пончики второй раз.</p><h3>3. Перевод между двумя игроками</h3><code>POST /api/v1/transfer</code><pre>Authorization: Bearer pn_live_ВАШ_КЛЮЧ
+Content-Type: application/json
+
+{
+  "from_telegram_id": "123456789",
+  "to_telegram_id": "987654321",
+  "amount": 100,
+  "reference": "dime-transfer-0001",
+  "description": "Перевод между игровыми счетами"
+}</pre><p>Перевод списывает сумму у отправителя и начисляет получателю одной атомарной операцией. Оба Telegram ID должны быть зарегистрированы в Пончике. Повтор с тем же reference не выполнит перевод второй раз.</p><p><b>Важно:</b> ключ принадлежит твоему проекту. Без telegram_id операция работает с твоим балансом; с telegram_id — с балансом указанного игрока, который уже зарегистрирован в боте Пончик. Это позволяет использовать пончики как валюту в стороннем проекте. Доступ к балансам игроков — доверенная привилегия: храни ключ только на сервере, не вставляй его в публичный JavaScript или мобильное приложение. При утечке немедленно отзови ключ.</p></div><button class="more-action" id="backFromDeveloper">← Вернуться в «Ещё»</button></section>
 <section class="page" id="page-admin"><div class="page-heading"><p class="eyebrow">ТОЛЬКО ДЛЯ АДМИНИСТРАТОРА</p><h1>Админ панель</h1></div><div class="admin-grid"><button class="more-action" data-admin="broadcast">✉<b>Рассылка</b><small>Сообщение всем игрокам</small></button><button class="more-action" data-admin="promo">％<b>Создать промокод</b><small>Код и размер награды</small></button><button class="more-action" data-admin="bonus">🔗<b>Создать бонусную ссылку</b><small>Сумма и лимит активаций</small></button><button class="more-action" data-admin="give">＋<b>Выдать баланс</b><small>Начислить пончики</small></button><button class="more-action" data-admin="take">−<b>Снять баланс</b><small>Списать пончики</small></button><button class="more-action" data-admin="ban">⛔<b>Заблокировать игрока</b><small>По Telegram username</small></button></div></section>
 </main><footer><span>ПОНЧИК КЛИКЕР</span><span>Играй честно · Расти постепенно</span></footer></div>
 <div class="toast" id="toast"></div>
