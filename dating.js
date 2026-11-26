@@ -57,16 +57,16 @@ async function messageHandler(m,ctx) {
   if(!value){await send(ctx.telegram,m.chat.id,"Напиши текстом, пожалуйста.");return true;}
   if(state.step==="name"){
     if(value.length<2 || value.length>32){await send(ctx.telegram,m.chat.id,"Имя должно быть от 2 до 32 символов. Попробуй ещё раз.");return true;}
-    state.name=value;state.step="age";await send(ctx.telegram,m.chat.id,"Сколько тебе лет? Раздел знакомств доступен только совершеннолетним (18+).");return true;
+    state.name=value;state.step="age";ctx.dbWrite(db);await send(ctx.telegram,m.chat.id,"Сколько тебе лет? Раздел знакомств доступен только совершеннолетним (18+).");return true;
   }
   if(state.step==="age"){
     const age=Number(value);
     if(!Number.isInteger(age)||age<18||age>99){await send(ctx.telegram,m.chat.id,"Укажи возраст от 18 до 99 лет. Если тебе нет 18, раздел знакомств недоступен.");return true;}
-    state.age=age;state.step="city";await send(ctx.telegram,m.chat.id,"Из какого ты города?");return true;
+    state.age=age;state.step="city";ctx.dbWrite(db);await send(ctx.telegram,m.chat.id,"Из какого ты города?");return true;
   }
   if(state.step==="city"){
     if(value.length<2||value.length>48){await send(ctx.telegram,m.chat.id,"Укажи город (до 48 символов).");return true;}
-    state.city=value;state.step="about";await send(ctx.telegram,m.chat.id,"Расскажи немного о себе — до 250 символов. Или отправь «Пропустить».");return true;
+    state.city=value;state.step="about";ctx.dbWrite(db);await send(ctx.telegram,m.chat.id,"Расскажи немного о себе — до 250 символов. Или отправь «Пропустить».");return true;
   }
   if(state.step==="about"){
     const old=d.profiles[id]||{};
